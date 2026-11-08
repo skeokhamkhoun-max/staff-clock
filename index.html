@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="robots" content="noindex">
+<title>Clock in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao+Looped:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/dist/face-api.js"></script>
+<style>
+  :root{
+    --paper:#E8EEE9; --ink:#14302A; --muted:#5D7068;
+    --in:#1E7A55; --out:#2E3D7C; --err:#B3261E; --key:#FFFFFF; --ok:#2FBF71;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:var(--paper);color:var(--ink);
+    font-family:"Noto Sans Lao Looped","Phetsarath OT","Saysettha OT",system-ui,sans-serif;
+    user-select:none;-webkit-user-select:none;overflow:hidden}
+  .screen{display:none;height:100%;padding:24px 28px;flex-direction:column}
+  .screen.on{display:flex}
+  button{font-family:inherit;color:inherit;border:0;cursor:pointer}
+  button:focus-visible{outline:4px solid #F2B705;outline-offset:3px}
+  button:disabled{opacity:.45;cursor:default}
+
+  /* home */
+  .top{display:flex;justify-content:space-between;align-items:baseline;gap:16px;font-size:clamp(18px,2.6vw,26px)}
+  .branch{font-weight:700}
+  .date{color:var(--muted)}
+  .clock{flex:1;display:flex;align-items:center;justify-content:center;
+    font-size:clamp(96px,22vw,260px);font-weight:700;letter-spacing:-0.02em;
+    font-variant-numeric:tabular-nums;line-height:1}
+  .clock .t{display:flex;align-items:baseline}
+  .clock .sec{font-size:.28em;color:var(--muted);margin-left:.15em}
+  .status{text-align:center;color:var(--muted);font-size:18px;min-height:26px;margin-bottom:10px}
+  .actions{display:grid;grid-template-columns:1fr 1fr;gap:20px;height:min(30vh,240px)}
+  .act{border-radius:22px;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+  .act b{font-size:clamp(34px,5.5vw,60px);font-weight:700}
+  .act span{font-size:clamp(15px,2vw,20px);opacity:.85}
+  .act.in{background:var(--in)} .act.out{background:var(--out)}
+  .act:active{transform:scale(.98)}
+  .banner{background:var(--err);color:#fff;border-radius:12px;padding:12px 16px;margin-top:12px;font-size:18px;display:none}
+
+  /* camera */
+  #cam{align-items:center;gap:14px}
+  .bar{align-self:stretch;display:flex;justify-content:space-between;align-items:center}
+  .bar h1{margin:0;font-size:clamp(26px,4vw,40px)}
+  .bar h1.in{color:var(--in)} .bar h1.out{color:var(--out)} .bar h1.mgr{color:var(--ink)}
+  .ghost{background:transparent;font-size:20px;padding:10px 14px;color:var(--muted)}
+  .stage{position:relative;width:min(70vh,92vw,560px);aspect-ratio:3/4;border-radius:28px;overflow:hidden;background:#0d1f1b;flex:0 1 auto;max-height:62vh}
+  .stage video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+  .oval{position:absolute;left:50%;top:46%;width:62%;height:66%;transform:translate(-50%,-50%);
+    border-radius:50%;border:5px solid rgba(255,255,255,.75);box-shadow:0 0 0 9999px rgba(13,31,27,.35);transition:border-color .2s}
+  .oval.good{border-color:var(--ok)}
+  .camMsg{font-size:clamp(22px,3.4vw,32px);font-weight:600;text-align:center;min-height:1.5em}
+  .camSub{font-size:clamp(16px,2.2vw,20px);color:var(--muted);text-align:center;min-height:1.4em}
+  .row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+  .pill{border-radius:999px;padding:14px 26px;font-size:20px;font-weight:600;background:#fff;box-shadow:0 2px 0 rgba(20,48,42,.18)}
+  .pill.dark{background:var(--ink);color:#fff}
+  .hidden{display:none !important}
+
+  /* keypad */
+  #pad{align-items:center}
+  .padBox{width:min(440px,100%);margin:auto 0;display:flex;flex-direction:column;gap:14px}
+  .prompt{font-size:clamp(20px,3vw,26px);text-align:center}
+  .display{height:76px;border-radius:14px;background:#fff;border:3px solid var(--ink);
+    display:flex;align-items:center;justify-content:center;font-size:44px;font-weight:700;
+    letter-spacing:.18em;font-variant-numeric:tabular-nums}
+  .hint{min-height:28px;text-align:center;color:var(--muted);font-size:18px}
+  .keys{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .k{height:clamp(60px,9vh,80px);border-radius:14px;background:var(--key);font-size:34px;font-weight:600;box-shadow:0 2px 0 rgba(20,48,42,.18)}
+  .k:active{background:#D5DED8}
+  .k.small{font-size:20px}
+  .k.go{background:var(--ink);color:#fff;font-size:22px}
+  .padVideo{position:fixed;width:1px;height:1px;opacity:0;pointer-events:none}
+
+  /* result */
+  #result{align-items:center;justify-content:center;text-align:center;gap:10px;color:#fff}
+  #result.good-in{background:var(--in)} #result.good-out{background:var(--out)}
+  #result.bad{background:var(--err)} #result.busy{background:var(--ink)} #result.good-mgr{background:var(--in)}
+  #rBig{font-size:clamp(36px,6vw,64px);font-weight:700;margin:0}
+  #rTime{font-size:clamp(70px,14vw,160px);font-weight:700;font-variant-numeric:tabular-nums;line-height:1.05}
+  #rNote{font-size:clamp(22px,3.4vw,34px);max-width:30ch}
+  .tag{display:inline-block;margin-top:6px;padding:6px 18px;border-radius:999px;background:rgba(255,255,255,.2);font-size:clamp(20px,3vw,30px);font-weight:600}
+  @media (max-width:600px){ .actions{grid-template-columns:1fr;height:auto} .act{height:120px} }
+</style>
+</head>
+<body>
+
+<section id="home" class="screen on">
+  <div class="top"><div class="branch" id="branchName"></div><div class="date" id="today"></div></div>
+  <div class="banner" id="banner"></div>
+  <div class="clock" id="clock"></div>
+  <div class="status" id="loadStatus">ກຳລັງໂຫຼດລະບົບສະແກນໜ້າ…</div>
+  <div class="actions">
+    <button class="act in" id="btnIn" onclick="startFace('In')" disabled><b>ເຂົ້າວຽກ</b><span>Clock in</span></button>
+    <button class="act out" id="btnOut" onclick="startFace('Out')" disabled><b>ອອກວຽກ</b><span>Clock out</span></button>
+  </div>
+</section>
+
+<section id="cam" class="screen">
+  <div class="bar"><h1 id="camTitle"></h1><button class="ghost" onclick="goHome()">ຍົກເລີກ</button></div>
+  <div class="stage"><video id="video" autoplay muted playsinline></video><div class="oval" id="oval"></div></div>
+  <div class="camMsg" id="camMsg"></div>
+  <div class="camSub" id="camSub"></div>
+  <div class="row hidden" id="camButtons">
+    <button class="pill dark" onclick="retryFace()">ລອງໃໝ່</button>
+    <button class="pill" id="usePinBtn" onclick="startPin()">ໃຊ້ລະຫັດ PIN</button>
+  </div>
+</section>
+
+<section id="pad" class="screen">
+  <div class="bar"><h1 id="padTitle"></h1><button class="ghost" onclick="goHome()">ຍົກເລີກ</button></div>
+  <div class="padBox">
+    <div class="prompt" id="prompt"></div>
+    <div class="display" id="display"></div>
+    <div class="hint" id="hint"></div>
+    <div class="keys" id="keys"></div>
+  </div>
+</section>
+
+<section id="result" class="screen">
+  <p id="rBig"></p>
+  <div id="rTime"></div>
+  <div id="rNote"></div>
+</section>
+
+<script>
+// ---------------- settings ----------------
+const API = 'https://script.google.com/macros/s/AKfycbyuBVRj_ENhG2c2FzBsVXIA-5mXvaPC0YUGOLjjmuhf1mp3R7XsX7rIrF5xCt4fMi2G/exec';
+const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/model/';
+const FACE_TIMEOUT_MS = 20000;   // give up on face scan after this long
+const TURN_NEEDED = 0.12;        // how far the head must turn for the liveness check
+const FRONT_MAX = 0.09;          // how straight the face must be when the face code is taken
+
+// tablet settings come from the link once (?branch=...&key=...) and are remembered on the device
+(function readSettings(){
+  const q = new URLSearchParams(location.search);
+  try {
+    if (q.get('branch')) localStorage.setItem('kiosk_branch', q.get('branch'));
+    if (q.get('key')) localStorage.setItem('kiosk_key', q.get('key'));
+  } catch (e) {}
+  if (q.get('key')) history.replaceState(null, '', location.pathname + (q.get('branch') ? '?branch=' + encodeURIComponent(q.get('branch')) : ''));
+})();
+function setting(k){ try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } }
+const BRANCH = (new URLSearchParams(location.search).get('branch')) || setting('kiosk_branch');
+const KEY = setting('kiosk_key');
+
+const DAYS = ['ວັນອາທິດ','ວັນຈັນ','ວັນອັງຄານ','ວັນພຸດ','ວັນພະຫັດ','ວັນສຸກ','ວັນເສົາ'];
+const MONTHS = ['ມັງກອນ','ກຸມພາ','ມີນາ','ເມສາ','ພຶດສະພາ','ມິຖຸນາ','ກໍລະກົດ','ສິງຫາ','ກັນຍາ','ຕຸລາ','ພະຈິກ','ທັນວາ'];
+const $ = id => document.getElementById(id);
+
+let action = null, mode = 'idle', idleTimer = null, busy = false, stream = null, runToken = 0;
+let modelsReady = false, lastPhoto = '';
+let padState = null;   // {kind:'pin'|'mgr'|'enrollId', step, id, pin, value}
+let managerCode = '';
+
+$('branchName').textContent = BRANCH || 'Clock in';
+function showBanner(t){ $('banner').textContent = t; $('banner').style.display = 'block'; }
+if (!BRANCH) showBanner('ເຄື່ອງນີ້ຍັງບໍ່ໄດ້ຕັ້ງສາຂາ. ໃຊ້ລິ້ງທີ່ມີ ?branch= ແລະ key=');
+else if (!KEY) showBanner('ເຄື່ອງນີ້ຍັງບໍ່ໄດ້ເຊື່ອມຕໍ່ລະບົບ. ເປີດລິ້ງທີ່ມີ key= ຄັ້ງທຳອິດ');
+
+// ---------------- clock ----------------
+function pad2(n){ return String(n).padStart(2,'0'); }
+function tick(){
+  const d = new Date();
+  $('clock').innerHTML = '<div class="t">' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + '<span class="sec">' + pad2(d.getSeconds()) + '</span></div>';
+  $('today').textContent = DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+}
+tick(); setInterval(tick, 1000);
+
+// hidden manager screen: press and hold the branch name for 3 seconds
+(function(){
+  let t = null;
+  const el = $('branchName');
+  const start = () => { t = setTimeout(startManager, 3000); };
+  const stop = () => clearTimeout(t);
+  el.addEventListener('pointerdown', start);
+  ['pointerup','pointerleave','pointercancel'].forEach(ev => el.addEventListener(ev, stop));
+})();
+
+// ---------------- models ----------------
+async function loadModels(){
+  try {
+    if (typeof faceapi === 'undefined') throw new Error('no faceapi');
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+    modelsReady = true;
+    $('loadStatus').textContent = '';
+  } catch (e) {
+    console.error(e);
+    $('loadStatus').textContent = 'ໂຫຼດລະບົບສະແກນໜ້າບໍ່ໄດ້ — ໃຊ້ລະຫັດ PIN ແທນ';
+  }
+  $('btnIn').disabled = false; $('btnOut').disabled = false;
+}
+loadModels();
+
+// ---------------- screens ----------------
+function show(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  $(id).classList.add('on');
+}
+function resetIdle(ms){ clearTimeout(idleTimer); idleTimer = setTimeout(goHome, ms || 30000); }
+function goHome(){
+  clearTimeout(idleTimer); runToken++; busy = false; mode = 'idle';
+  action = null; padState = null; managerCode = ''; lastPhoto = ''; afterResult = null;
+  stopCamera();
+  $('result').className = 'screen';
+  show('home');
+}
+
+// ---------------- camera ----------------
+async function startCamera(){
+  if (stream) return true;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+    const v = $('video'); v.srcObject = stream;
+    await v.play().catch(() => {});
+    await new Promise(r => { if (v.readyState >= 2) r(); else v.onloadeddata = () => r(); });
+    return true;
+  } catch (e) {
+    console.error(e); stream = null; return false;
+  }
+}
+function stopCamera(){
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  $('video').srcObject = null;
+}
+function grabPhoto(){
+  const v = $('video');
+  if (!stream || !v.videoWidth) return '';
+  const w = 320, h = Math.round(320 * v.videoHeight / v.videoWidth);
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  ctx.translate(w, 0); ctx.scale(-1, 1);
+  ctx.drawImage(v, 0, 0, w, h);
+  return c.toDataURL('image/jpeg', 0.7);
+}
+
+// how far the head is turned: about 0 when facing the camera, + or - when turned
+function yawOf(landmarks){
+  const p = landmarks.positions;
+  const left = p[0].x, right = p[16].x, nose = p[30].x;
+  return (nose - left) / (right - left) - 0.5;
+}
+function faceBigEnough(det, v){ return det.detection.box.width > v.videoWidth * 0.22; }
+const detOpts = () => new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function camText(msg, sub){ $('camMsg').textContent = msg || ''; $('camSub').textContent = sub || ''; }
+
+// ---------------- clock in / out by face ----------------
+async function startFace(a){
+  action = a; mode = 'face';
+  $('camTitle').textContent = a === 'In' ? 'ເຂົ້າວຽກ' : 'ອອກວຽກ';
+  $('camTitle').className = a === 'In' ? 'in' : 'out';
+  if (!modelsReady) { startPin(); return; }
+  show('cam'); resetIdle(45000);
+  runFace();
+}
+function retryFace(){ if (action) { resetIdle(45000); runFace(); } }
+
+async function runFace(){
+  const token = ++runToken;
+  $('camButtons').classList.add('hidden');
+  $('oval').classList.remove('good');
+  camText('ກຳລັງເປີດກ້ອງ…');
+  if (!(await startCamera())) {
+    if (token !== runToken) return;
+    camText('ເປີດກ້ອງບໍ່ໄດ້', 'ອະນຸຍາດໃຫ້ໃຊ້ກ້ອງ ຫຼື ໃຊ້ລະຫັດ PIN');
+    $('camButtons').classList.remove('hidden'); return;
+  }
+  const v = $('video');
+  const deadline = Date.now() + FACE_TIMEOUT_MS;
+  const samples = []; let base = null, photo = '';
+
+  // step 1: straight face, take the face code
+  camText('ຫັນໜ້າເຂົ້າກ້ອງ ໃຫ້ໜ້າຢູ່ໃນວົງ', 'Look at the camera');
+  while (Date.now() < deadline && samples.length < 3) {
+    if (token !== runToken) return;
+    const det = await faceapi.detectSingleFace(v, detOpts()).withFaceLandmarks().withFaceDescriptor();
+    if (token !== runToken) return;
+    if (det && faceBigEnough(det, v)) {
+      const yaw = yawOf(det.landmarks);
+      if (Math.abs(yaw) < FRONT_MAX) {
+        samples.push(Array.from(det.descriptor));
+        if (!photo) photo = grabPhoto();
+        base = base === null ? yaw : base;
+        $('oval').classList.add('good');
+        camText('ຢູ່ນິ່ງໆ…', 'Hold still');
+      } else camText('ຫັນໜ້າຊື່ໆເຂົ້າກ້ອງ', 'Face the camera straight');
+    } else {
+      $('oval').classList.remove('good');
+      camText(det ? 'ເຂົ້າມາໃກ້ກ້ອງອີກໜ້ອຍ' : 'ຫັນໜ້າເຂົ້າກ້ອງ ໃຫ້ໜ້າຢູ່ໃນວົງ', det ? 'Come a little closer' : 'Look at the camera');
+    }
+    await sleep(60);
+  }
+  if (samples.length < 3) return faceFail(token, 'ບໍ່ເຫັນໃບໜ້າ', 'ລອງໃໝ່ ຫຼື ໃຊ້ລະຫັດ PIN');
+
+  // step 2: liveness — turn the head a little
+  camText('ຄ່ອຍໆ ຫັນໜ້າໄປຊ້າຍ ຫຼື ຂວາ', 'Slowly turn your head to one side');
+  let turned = false;
+  while (Date.now() < deadline) {
+    if (token !== runToken) return;
+    const det = await faceapi.detectSingleFace(v, detOpts()).withFaceLandmarks();
+    if (token !== runToken) return;
+    if (det && faceBigEnough(det, v) && Math.abs(yawOf(det.landmarks) - base) > TURN_NEEDED) { turned = true; break; }
+    await sleep(50);
+  }
+  if (!turned) return faceFail(token, 'ກວດບໍ່ຜ່ານ', 'ຫັນໜ້າຊ້າໆ ແລ້ວລອງໃໝ່ ຫຼື ໃຊ້ລະຫັດ PIN');
+
+  // step 3: send to the sheet
+  const mean = new Array(128).fill(0);
+  samples.forEach(s => s.forEach((x, i) => mean[i] += x / samples.length));
+  stopCamera();
+  lastPhoto = photo;
+  submit({ op: 'face', action: action, descriptor: mean.map(x => Math.round(x * 1e5) / 1e5), photo: photo });
+}
+function faceFail(token, msg, sub){
+  if (token !== runToken) return;
+  $('oval').classList.remove('good');
+  camText(msg, sub);
+  $('camButtons').classList.remove('hidden');
+}
+
+// ---------------- keypad (PIN backup and manager screens) ----------------
+const KEYS = ['1','2','3','4','5','6','7','8','9','del','0','go'];
+KEYS.forEach(k => {
+  const b = document.createElement('button');
+  b.className = 'k' + (k === 'del' ? ' small' : '') + (k === 'go' ? ' go' : '');
+  b.textContent = k === 'del' ? 'ລຶບ' : k === 'go' ? 'ຕໍ່ໄປ' : k;
+  if (k === 'go') b.id = 'goKey';
+  b.onclick = () => press(k);
+  $('keys').appendChild(b);
+});
+
+function startPin(){
+  runToken++;
+  mode = 'pin';
+  padState = { kind: 'pin', step: 'id', id: '', pin: '' };
+  $('padTitle').textContent = (action === 'In' ? 'ເຂົ້າວຽກ' : 'ອອກວຽກ') + ' · PIN';
+  $('padTitle').className = action === 'In' ? 'in' : 'out';
+  $('hint').textContent = 'ຈະຖ່າຍຮູບໄວ້ເປັນຫຼັກຖານ';
+  show('pad'); renderPad(); resetIdle();
+  startCamera();   // keep camera on so a photo is taken with the PIN
+}
+function startManager(){
+  if (mode !== 'idle') return;
+  mode = 'mgr';
+  padState = { kind: 'mgr', value: '' };
+  $('padTitle').textContent = 'ລົງທະບຽນໃບໜ້າ';
+  $('padTitle').className = 'mgr';
+  $('hint').textContent = '';
+  show('pad'); renderPad(); resetIdle();
+}
+function renderPad(){
+  const s = padState; if (!s) return;
+  let prompt = '', shown = '', ready = false, go = 'ຕໍ່ໄປ';
+  if (s.kind === 'pin') {
+    if (s.step === 'id') { prompt = 'ໃສ່ລະຫັດພະນັກງານ'; shown = s.id; ready = s.id.length > 0; }
+    else { prompt = 'ໃສ່ລະຫັດ PIN'; shown = '•'.repeat(s.pin.length); ready = s.pin.length >= 4; go = 'ຢືນຢັນ'; }
+  } else if (s.kind === 'mgr') {
+    prompt = 'ໃສ່ລະຫັດຜູ້ຈັດການ'; shown = '•'.repeat(s.value.length); ready = s.value.length >= 4;
+  } else if (s.kind === 'enrollId') {
+    prompt = 'ລະຫັດພະນັກງານທີ່ຈະລົງທະບຽນໜ້າ'; shown = s.value; ready = s.value.length > 0;
+  }
+  $('prompt').textContent = prompt; $('display').textContent = shown;
+  $('goKey').textContent = go; $('goKey').disabled = !ready;
+}
+function press(k){
+  const s = padState; if (!s || busy) return;
+  resetIdle();
+  const field = s.kind === 'pin' ? (s.step === 'id' ? 'id' : 'pin') : 'value';
+  const max = field === 'id' || s.kind === 'enrollId' ? 8 : 8;
+  if (k === 'del') {
+    if (s.kind === 'pin' && s.step === 'pin' && !s.pin) s.step = 'id';
+    else s[field] = s[field].slice(0, -1);
+  } else if (k === 'go') {
+    if (s.kind === 'pin') {
+      if (s.step === 'id' && s.id) s.step = 'pin';
+      else if (s.step === 'pin' && s.pin.length >= 4) {
+        const photo = grabPhoto(); lastPhoto = photo;
+        stopCamera();
+        submit({ op: 'pin', action: action, id: s.id, pin: s.pin, photo: photo });
+        return;
+      }
+    } else if (s.kind === 'mgr' && s.value.length >= 4) {
+      managerCode = s.value;
+      checkManager();
+      return;
+    } else if (s.kind === 'enrollId' && s.value) {
+      startEnroll(s.value);
+      return;
+    }
+  } else if (s[field].length < max) s[field] += k;
+  renderPad();
+}
+document.addEventListener('keydown', e => {
+  if (!$('pad').classList.contains('on')) return;
+  if (/^[0-9]$/.test(e.key)) press(e.key);
+  else if (e.key === 'Backspace') press('del');
+  else if (e.key === 'Enter') press('go');
+  else if (e.key === 'Escape') goHome();
+});
+
+// ---------------- manager: register faces ----------------
+let staffCache = [];
+async function checkManager(){
+  busy = true;
+  const r = await api({ op: 'staff', manager: managerCode });
+  busy = false;
+  if (!r || !r.ok) { showError(r); return; }
+  staffCache = r.staff || [];
+  padState = { kind: 'enrollId', value: '' };
+  const done = staffCache.filter(s => s.enrolled).length;
+  $('hint').textContent = 'ລົງທະບຽນແລ້ວ ' + done + ' / ' + staffCache.length + ' ຄົນ';
+  renderPad();
+}
+async function startEnroll(id){
+  const person = staffCache.find(s => s.id === id);
+  if (!person) { $('hint').textContent = 'ບໍ່ພົບລະຫັດພະນັກງານນີ້'; padState.value = ''; renderPad(); return; }
+  if (!modelsReady) { $('hint').textContent = 'ລະບົບສະແກນໜ້າຍັງບໍ່ພ້ອມ'; return; }
+  mode = 'enroll';
+  $('camTitle').textContent = 'ລົງທະບຽນ: ' + person.name;
+  $('camTitle').className = 'mgr';
+  $('camButtons').classList.add('hidden');
+  show('cam'); resetIdle(60000);
+  const token = ++runToken;
+  camText('ກຳລັງເປີດກ້ອງ…');
+  if (!(await startCamera())) { camText('ເປີດກ້ອງບໍ່ໄດ້', 'ອະນຸຍາດໃຫ້ໃຊ້ກ້ອງໃນ browser'); return; }
+  const v = $('video'); const samples = []; const deadline = Date.now() + 30000;
+  camText('ໃຫ້ ' + person.name + ' ເບິ່ງກ້ອງ ແລະ ຢູ່ນິ່ງໆ', 'Look straight at the camera');
+  while (Date.now() < deadline && samples.length < 6) {
+    if (token !== runToken) return;
+    const det = await faceapi.detectSingleFace(v, detOpts()).withFaceLandmarks().withFaceDescriptor();
+    if (token !== runToken) return;
+    if (det && faceBigEnough(det, v) && Math.abs(yawOf(det.landmarks)) < FRONT_MAX) {
+      samples.push(Array.from(det.descriptor).map(x => Math.round(x * 1e5) / 1e5));
+      $('oval').classList.add('good');
+      camText('ກຳລັງບັນທຶກ… ' + samples.length + ' / 6', 'Hold still');
+      await sleep(350);
+    } else { $('oval').classList.remove('good'); await sleep(80); }
+  }
+  if (samples.length < 6) { camText('ບັນທຶກບໍ່ສຳເລັດ', 'ລອງໃໝ່ໃນບ່ອນທີ່ມີແສງດີ'); return; }
+  stopCamera();
+  busy = true; result('busy', 'ກຳລັງບັນທຶກ…', '', '');
+  const r = await api({ op: 'enroll', manager: managerCode, id: person.id, descriptors: samples });
+  busy = false;
+  if (r && r.ok) {
+    person.enrolled = true;
+    result('good-mgr', 'ບັນທຶກໜ້າ ' + r.name + ' ແລ້ວ', '', 'ແຕະໜ້າຈໍເພື່ອລົງທະບຽນຄົນຕໍ່ໄປ');
+    resetIdle(20000);
+    afterResult = () => { padState = { kind: 'enrollId', value: '' }; mode = 'mgr'; show('pad'); renderPad();
+      const done = staffCache.filter(s => s.enrolled).length;
+      $('hint').textContent = 'ລົງທະບຽນແລ້ວ ' + done + ' / ' + staffCache.length + ' ຄົນ'; resetIdle(); };
+  } else showError(r);
+}
+
+// ---------------- talk to the sheet ----------------
+async function api(body){
+  body.key = KEY; body.branch = BRANCH;
+  try {
+    const res = await fetch(API, { method: 'POST', body: JSON.stringify(body) });
+    return await res.json();
+  } catch (e) { console.error(e); return { ok: false, code: 'network' }; }
+}
+async function submit(body){
+  if (busy) return; busy = true;
+  clearTimeout(idleTimer);
+  result('busy', 'ກຳລັງບັນທຶກ…', '', '');
+  const r = await api(body);
+  busy = false;
+  onResult(r);
+}
+function lateTag(min){
+  if (min == null) return '';
+  if (min > 0) return 'ຊ້າ ' + min + ' ນາທີ';
+  if (min < 0) return 'ກ່ອນເວລາ ' + (-min) + ' ນາທີ';
+  return 'ຕົງເວລາ';
+}
+function onResult(r){
+  if (r && r.ok){
+    if (r.action === 'In') result('good-in', 'ສະບາຍດີ ' + r.name, r.time, 'ບັນທຶກເຂົ້າວຽກແລ້ວ', lateTag(r.minutes));
+    else {
+      const h = Math.floor((r.worked || 0) / 60), m = (r.worked || 0) % 60;
+      result('good-out', 'ຂອບໃຈ ' + r.name, r.time, 'ບັນທຶກອອກວຽກແລ້ວ', 'ເຮັດວຽກ ' + h + ' ຊົ່ວໂມງ ' + m + ' ນາທີ');
+    }
+    resetIdle(5000); return;
+  }
+  showError(r);
+}
+function showError(r){
+  const c = r ? r.code : 'bad';
+  const msg = {
+    nomatch:  ['ບໍ່ຮູ້ຈັກໃບໜ້ານີ້', 'ລອງໃໝ່ ຫຼື ໃຊ້ລະຫັດ PIN'],
+    notfound: ['ບໍ່ພົບລະຫັດພະນັກງານນີ້', 'ກວດລະຫັດແລ້ວລອງໃໝ່'],
+    badpin:   ['ລະຫັດ PIN ບໍ່ຖືກຕ້ອງ', r && r.left > 0 ? 'ລອງໄດ້ອີກ ' + r.left + ' ເທື່ອ' : 'ລໍ 5 ນາທີ ຫຼື ແຈ້ງຫົວໜ້າ'],
+    badmgr:   ['ລະຫັດຜູ້ຈັດການບໍ່ຖືກຕ້ອງ', ''],
+    locked:   ['ໃສ່ລະຫັດຜິດຫຼາຍເທື່ອ', 'ລໍ 5 ນາທີ ຫຼື ແຈ້ງຫົວໜ້າ'],
+    already:  [(r && r.name ? r.name + ' ' : '') + 'ເຂົ້າວຽກແລ້ວ', 'ເຂົ້າວຽກເວລາ ' + (r && r.time) + '. ຖ້າຈະອອກ ໃຫ້ກົດ ອອກວຽກ'],
+    notin:    [(r && r.name ? r.name + ' ' : '') + 'ຍັງບໍ່ໄດ້ເຂົ້າວຽກ', 'ໃຫ້ກົດ ເຂົ້າວຽກ ກ່ອນ'],
+    duplicate:['ໜ້ານີ້ຄ້າຍກັບ ' + (r && r.name) + ' ທີ່ລົງທະບຽນແລ້ວ', 'ກວດລະຫັດພະນັກງານອີກຄັ້ງ'],
+    badkey:   ['ເຄື່ອງນີ້ຍັງບໍ່ໄດ້ເຊື່ອມຕໍ່ລະບົບ', 'ເປີດລິ້ງທີ່ມີ key= ໃນເຄື່ອງນີ້'],
+    network:  ['ເຊື່ອມຕໍ່ບໍ່ໄດ້', 'ກວດ Wi-Fi ແລ້ວລອງໃໝ່'],
+    bad:      ['ບັນທຶກບໍ່ໄດ້', 'ລອງໃໝ່ອີກຄັ້ງ'],
+    error:    ['ບັນທຶກບໍ່ໄດ້', 'ລອງໃໝ່ອີກຄັ້ງ']
+  }[c] || ['ບັນທຶກບໍ່ໄດ້', 'ລອງໃໝ່ອີກຄັ້ງ'];
+  result('bad', msg[0], '', msg[1]);
+  resetIdle(6000);
+}
+
+let afterResult = null;
+function result(kind, big, time, note, tag){
+  $('result').className = 'screen ' + kind;
+  $('rBig').textContent = big;
+  $('rTime').textContent = time;
+  $('rNote').textContent = note;
+  if (tag){ const t = document.createElement('div'); t.className = 'tag'; t.textContent = tag; $('rNote').appendChild(document.createElement('br')); $('rNote').appendChild(t); }
+  show('result');
+}
+document.addEventListener('pointerdown', () => {
+  if (!$('result').classList.contains('on') || busy) return;
+  if (afterResult) { const f = afterResult; afterResult = null; f(); return; }
+  goHome();
+});
+</script>
+</body>
+</html>
