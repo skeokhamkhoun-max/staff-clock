@@ -33,6 +33,18 @@
   .clock .t{display:flex;align-items:baseline}
   .clock .sec{font-size:.28em;color:var(--muted);margin-left:.15em}
   .status{text-align:center;color:var(--muted);font-size:18px;min-height:26px;margin-bottom:10px}
+  .clock.small{font-size:clamp(64px,13vw,170px);flex:0 0 auto;margin:6px 0 14px}
+  .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px;flex:1;min-height:0}
+  .tile{background:#fff;border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;min-height:0;overflow:hidden;box-shadow:0 2px 0 rgba(20,48,42,.08)}
+  .tile .lbl{font-size:clamp(15px,1.9vw,19px);color:var(--muted);font-weight:600}
+  .tile .num{font-size:clamp(36px,5.5vw,60px);font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
+  .tile .num small{font-size:.45em;color:var(--muted);font-weight:600}
+  .tile .names{font-size:clamp(14px,1.7vw,17px);line-height:1.45;overflow:auto;min-height:0}
+  .tile .names .late{color:var(--err);font-weight:600}
+  .tile.work .num{color:var(--in)}
+  .tile.exp{border-top:6px solid var(--ink)} .tile.work{border-top:6px solid var(--in)}
+  .tile.off{border-top:6px solid #8C7AB8} .tile.leave{border-top:6px solid #4F86C6}
+  .updated{font-size:13px;color:var(--muted);text-align:right;margin:-8px 2px 8px}
   .actions{display:grid;grid-template-columns:1fr 1fr;gap:20px;height:min(30vh,240px)}
   .act{border-radius:22px;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
   .act b{font-size:clamp(34px,5.5vw,60px);font-weight:700}
@@ -83,6 +95,7 @@
   #rNote{font-size:clamp(22px,3.4vw,34px);max-width:30ch}
   .tag{display:inline-block;margin-top:6px;padding:6px 18px;border-radius:999px;background:rgba(255,255,255,.2);font-size:clamp(20px,3vw,30px);font-weight:600}
   @media (max-width:600px){ .actions{grid-template-columns:1fr;height:auto} .act{height:120px} }
+  @media (max-width:820px){ .summary{grid-template-columns:repeat(2,1fr)} }
 </style>
 </head>
 <body>
@@ -91,6 +104,13 @@
   <div class="top"><div class="branch" id="branchName"></div><div class="date" id="today"></div></div>
   <div class="banner" id="banner"></div>
   <div class="clock" id="clock"></div>
+  <div class="summary hidden" id="summary">
+    <div class="tile exp"><div class="lbl">ຕ້ອງມາວຽກມື້ນີ້</div><div class="num" id="sExp">–</div><div class="names" id="nExp"></div></div>
+    <div class="tile work"><div class="lbl">ຢູ່ວຽກແລ້ວ</div><div class="num" id="sWork">–</div><div class="names" id="nWork"></div></div>
+    <div class="tile off"><div class="lbl">ພັກປະຈຳອາທິດ</div><div class="num" id="sOff">–</div><div class="names" id="nOff"></div></div>
+    <div class="tile leave"><div class="lbl">ລາພັກ</div><div class="num" id="sLeave">–</div><div class="names" id="nLeave"></div></div>
+  </div>
+  <div class="updated hidden" id="updated"></div>
   <div class="status" id="loadStatus">ກຳລັງໂຫຼດລະບົບສະແກນໜ້າ…</div>
   <div class="actions">
     <button class="act in" id="btnIn" onclick="startFace('In')" disabled><b>ເຂົ້າວຽກ</b><span>Clock in</span></button>
@@ -178,6 +198,29 @@ tick(); setInterval(tick, 1000);
   el.addEventListener('pointerdown', start);
   ['pointerup','pointerleave','pointercancel'].forEach(ev => el.addEventListener(ev, stop));
 })();
+
+// ---------------- today's summary on the home screen ----------------
+function namesHtml(list){
+  return list.map(x => typeof x === 'string' ? esc(x) : (x.late ? '<span class="late">' + esc(x.name) + '</span>' : esc(x.name))).join(', ');
+}
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+async function loadSummary(){
+  if (!KEY || !BRANCH) return;
+  const r = await api({ op: 'today' });
+  if (!r || !r.ok) return;
+  $('summary').classList.remove('hidden'); $('updated').classList.remove('hidden');
+  $('clock').classList.add('small');
+  $('sExp').textContent = r.expected;
+  $('nExp').innerHTML = r.notIn.length ? 'ຍັງບໍ່ມາ: ' + namesHtml(r.notIn) : (r.expected ? 'ມາຄົບແລ້ວ' : '');
+  $('sWork').innerHTML = r.atWork.length + ' <small>/ ' + r.expected + '</small>';
+  $('nWork').innerHTML = r.atWork.map(a => (a.late ? '<span class="late">' : '<span>') + esc(a.name) + ' ' + esc(a.time) + '</span>').join(', ')
+    + (r.clockedOut.length ? '<br>ອອກແລ້ວ: ' + namesHtml(r.clockedOut) : '');
+  $('sOff').textContent = r.dayOff.length;  $('nOff').innerHTML = namesHtml(r.dayOff);
+  $('sLeave').textContent = r.leave.length; $('nLeave').innerHTML = namesHtml(r.leave);
+  const d = new Date();
+  $('updated').textContent = 'ອັບເດດ ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+}
+loadSummary(); setInterval(() => { if (mode === 'idle') loadSummary(); }, 60000);
 
 // ---------------- models ----------------
 async function loadModels(){
@@ -486,7 +529,7 @@ function onResult(r){
       const h = Math.floor((r.worked || 0) / 60), m = (r.worked || 0) % 60;
       result('good-out', 'ຂອບໃຈ ' + r.name, r.time, 'ບັນທຶກອອກວຽກແລ້ວ', 'ເຮັດວຽກ ' + h + ' ຊົ່ວໂມງ ' + m + ' ນາທີ');
     }
-    resetIdle(5000); return;
+    resetIdle(5000); setTimeout(loadSummary, 1500); return;
   }
   showError(r);
 }
