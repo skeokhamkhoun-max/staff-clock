@@ -44,7 +44,24 @@
   .tile.work .num{color:var(--in)}
   .tile.exp{border-top:6px solid var(--ink)} .tile.work{border-top:6px solid var(--in)}
   .tile.off{border-top:6px solid #8C7AB8} .tile.leave{border-top:6px solid #4F86C6}
-  .updated{font-size:13px;color:var(--muted);text-align:right;margin:-8px 2px 8px}
+  .updated{font-size:13px;color:var(--muted);text-align:right;margin:-8px 2px 8px;display:flex;justify-content:space-between;gap:12px}
+  .updated b{color:var(--ink);font-weight:600}
+  .summary{cursor:pointer}
+
+  /* teams page */
+  #teams{gap:14px}
+  .teamGrid{flex:1;min-height:0;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;align-content:start;padding-bottom:10px}
+  .team{background:#fff;border-radius:18px;padding:16px 18px;box-shadow:0 2px 0 rgba(20,48,42,.08)}
+  .team h2{margin:0;font-size:clamp(20px,2.6vw,26px);display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .team h2 span{font-size:.8em;color:var(--in);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .team h2 span small{color:var(--muted);font-weight:600}
+  .person{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-top:1px solid #E3E9E5;font-size:clamp(16px,2vw,19px)}
+  .person:first-of-type{margin-top:8px}
+  .chip{border-radius:999px;padding:3px 12px;font-size:.85em;font-weight:600;white-space:nowrap}
+  .chip.in{background:#DDF3E7;color:#1E7A55} .chip.inLate{background:#FBE3E1;color:#B3261E}
+  .chip.notyet{background:#EEF1EF;color:#5D7068} .chip.absent{background:#FBE3E1;color:#B3261E}
+  .chip.out{background:#E4E7EE;color:#2E3D7C} .chip.off{background:#ECE7F6;color:#5E4B8B} .chip.leave{background:#E1ECF8;color:#2F5F96}
+  .emptyTeam{color:var(--muted);font-size:16px;margin-top:8px}
   .actions{display:grid;grid-template-columns:1fr 1fr;gap:20px;height:min(30vh,240px)}
   .act{border-radius:22px;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
   .act b{font-size:clamp(34px,5.5vw,60px);font-weight:700}
@@ -110,12 +127,17 @@
     <div class="tile off"><div class="lbl">ພັກປະຈຳອາທິດ</div><div class="num" id="sOff">–</div><div class="names" id="nOff"></div></div>
     <div class="tile leave"><div class="lbl">ລາພັກ</div><div class="num" id="sLeave">–</div><div class="names" id="nLeave"></div></div>
   </div>
-  <div class="updated hidden" id="updated"></div>
+  <div class="updated hidden" id="updated"><b>ແຕະເພື່ອເບິ່ງຕາມທີມ ›</b><span id="updTime"></span></div>
   <div class="status" id="loadStatus">ກຳລັງໂຫຼດລະບົບສະແກນໜ້າ…</div>
   <div class="actions">
     <button class="act in" id="btnIn" onclick="startFace('In')" disabled><b>ເຂົ້າວຽກ</b><span>Clock in</span></button>
     <button class="act out" id="btnOut" onclick="startFace('Out')" disabled><b>ອອກວຽກ</b><span>Clock out</span></button>
   </div>
+</section>
+
+<section id="teams" class="screen">
+  <div class="bar"><h1 id="teamsTitle" class="mgr">ທີມມື້ນີ້</h1><button class="ghost" onclick="goHome()">‹ ກັບຄືນ</button></div>
+  <div class="teamGrid" id="teamGrid"></div>
 </section>
 
 <section id="cam" class="screen">
@@ -217,10 +239,56 @@ async function loadSummary(){
     + (r.clockedOut.length ? '<br>ອອກແລ້ວ: ' + namesHtml(r.clockedOut) : '');
   $('sOff').textContent = r.dayOff.length;  $('nOff').innerHTML = namesHtml(r.dayOff);
   $('sLeave').textContent = r.leave.length; $('nLeave').innerHTML = namesHtml(r.leave);
+  lastSummary = r;
+  if ($('teams').classList.contains('on')) renderTeams();
   const d = new Date();
-  $('updated').textContent = 'ອັບເດດ ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  $('updTime').textContent = 'ອັບເດດ ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
 }
-loadSummary(); setInterval(() => { if (mode === 'idle') loadSummary(); }, 60000);
+
+// ---------------- teams page ----------------
+let lastSummary = null;
+const ST_ORDER = { in: 0, inLate: 1, absent: 2, notyet: 3, out: 4, off: 5, leave: 6 };
+function chipText(p){
+  switch (p.st) {
+    case 'in': return '✓ ' + p.time;
+    case 'inLate': return 'ຊ້າ · ' + p.time;
+    case 'absent': return 'ຍັງບໍ່ມາ (ຊ້າ)';
+    case 'notyet': return 'ຍັງບໍ່ມາ · ' + p.shift;
+    case 'out': return 'ອອກແລ້ວ ' + (p.out || '');
+    case 'off': return 'ພັກປະຈຳ';
+    case 'leave': return 'ລາພັກ';
+  }
+  return '';
+}
+function renderTeams(){
+  const r = lastSummary; if (!r) return;
+  const order = (r.teams || []).slice();
+  r.people.forEach(p => { if (p.team && order.indexOf(p.team) < 0) order.push(p.team); });
+  if (r.people.some(p => !p.team)) order.push('');
+  const grid = $('teamGrid'); grid.innerHTML = '';
+  order.forEach(team => {
+    const members = r.people.filter(p => (p.team || '') === team)
+      .sort((a, b) => (ST_ORDER[a.st] - ST_ORDER[b.st]) || a.name.localeCompare(b.name));
+    if (!members.length && !team) return;
+    const working = members.filter(p => p.st === 'in' || p.st === 'inLate').length;
+    const expected = members.filter(p => p.st !== 'off' && p.st !== 'leave').length;
+    const card = document.createElement('div'); card.className = 'team';
+    card.innerHTML = '<h2>' + esc(team || 'ບໍ່ມີທີມ') + '<span>' + working + ' <small>/ ' + expected + '</small></span></h2>' +
+      (members.length ? members.map(p => '<div class="person"><span>' + esc(p.name) + '</span><span class="chip ' + p.st + '">' + esc(chipText(p)) + '</span></div>').join('')
+                      : '<div class="emptyTeam">ບໍ່ມີພະນັກງານໃນສາຂານີ້</div>');
+    grid.appendChild(card);
+  });
+}
+function openTeams(){
+  if (mode !== 'idle' || !lastSummary) return;
+  mode = 'teams';
+  $('teamsTitle').textContent = 'ທີມມື້ນີ້ · ' + BRANCH;
+  renderTeams(); show('teams'); resetIdle(45000);
+  loadSummary();
+}
+loadSummary(); setInterval(() => { if (mode === 'idle' || mode === 'teams') loadSummary(); }, 60000);
+$('summary').addEventListener('click', openTeams);
+$('updated').addEventListener('click', openTeams);
 
 // ---------------- models ----------------
 async function loadModels(){
