@@ -68,6 +68,23 @@
   .tile{cursor:pointer} .tile:active{transform:scale(.98)}
   .tile .more{margin-top:auto;font-size:13px;color:var(--muted);font-weight:600}
   .emptyAll{grid-column:1/-1;text-align:center;color:var(--muted);font-size:22px;padding:40px 0}
+
+  /* expanded box on the home screen */
+  #home.expanded .clock{display:none}
+  .summary.compact{flex:0 0 auto;margin-bottom:10px}
+  .summary.compact .names, .summary.compact .more{display:none}
+  .summary.compact .tile{padding:10px 14px;opacity:.6}
+  .summary.compact .tile.sel{opacity:1;box-shadow:0 0 0 3px var(--ink)}
+  .summary.compact .num{font-size:clamp(28px,4vw,42px)}
+  .detail{flex:1;min-height:0;background:#fff;border-radius:18px;padding:14px 18px;display:flex;flex-direction:column;margin-bottom:14px;box-shadow:0 2px 0 rgba(20,48,42,.08)}
+  .detailHead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px}
+  .detailHead span{font-size:clamp(20px,2.6vw,26px);font-weight:700}
+  .detailBody{flex:1;min-height:0;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:4px 26px;align-content:start}
+  .grp{margin-bottom:12px}
+  .grp h3{margin:0;font-size:clamp(17px,2vw,20px);display:flex;justify-content:space-between;gap:8px;border-bottom:2px solid var(--ink);padding-bottom:4px}
+  .grp h3 small{color:var(--muted);font-weight:600}
+  .grp .person:first-of-type{margin-top:0}
+  .grp .person{border-top:none;border-bottom:1px solid #E3E9E5;padding:7px 0}
   .actions{display:grid;grid-template-columns:1fr 1fr;gap:20px;height:min(30vh,240px)}
   .act{border-radius:22px;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
   .act b{font-size:clamp(34px,5.5vw,60px);font-weight:700}
@@ -132,6 +149,10 @@
     <div class="tile work" data-filter="work"><div class="lbl">ຢູ່ວຽກແລ້ວ</div><div class="num" id="sWork">–</div><div class="names" id="nWork"></div><div class="more">ເບິ່ງ ›</div></div>
     <div class="tile off" data-filter="off"><div class="lbl">ພັກປະຈຳອາທິດ</div><div class="num" id="sOff">–</div><div class="names" id="nOff"></div><div class="more">ເບິ່ງ ›</div></div>
     <div class="tile leave" data-filter="leave"><div class="lbl">ລາພັກ</div><div class="num" id="sLeave">–</div><div class="names" id="nLeave"></div><div class="more">ເບິ່ງ ›</div></div>
+  </div>
+  <div class="detail hidden" id="detail">
+    <div class="detailHead"><span id="detailTitle"></span><button class="ghost" id="detailClose">✕ ປິດ</button></div>
+    <div class="detailBody" id="detailBody"></div>
   </div>
   <div class="updated hidden" id="updated"><b>ແຕະເພື່ອເບິ່ງຕາມທີມ ›</b><span id="updTime"></span></div>
   <div class="status" id="loadStatus">ກຳລັງໂຫຼດລະບົບສະແກນໜ້າ…</div>
@@ -246,6 +267,7 @@ async function loadSummary(){
   $('sLeave').textContent = r.leave.length; $('nLeave').innerHTML = namesHtml(r.leave);
   lastSummary = r;
   if ($('teams').classList.contains('on')) renderTeams();
+  if (expanded) renderDetail();
   const d = new Date();
   $('updTime').textContent = 'ອັບເດດ ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
 }
@@ -298,6 +320,39 @@ function renderTeams(){
   });
   if (!grid.children.length) grid.innerHTML = '<div class="emptyAll">ບໍ່ມີໃຜ</div>';
 }
+// ---------------- expand one box on the home screen ----------------
+let expanded = null, expandTimer = null;
+function toggleDetail(filter){
+  if (mode !== 'idle' || !lastSummary) return;
+  expanded = expanded === filter ? null : filter;
+  clearTimeout(expandTimer);
+  const on = !!expanded;
+  $('home').classList.toggle('expanded', on);
+  $('summary').classList.toggle('compact', on);
+  $('detail').classList.toggle('hidden', !on);
+  document.querySelectorAll('.tile[data-filter]').forEach(t => t.classList.toggle('sel', t.dataset.filter === expanded));
+  if (on) { renderDetail(); expandTimer = setTimeout(() => { if (expanded) toggleDetail(expanded); }, 60000); }
+}
+function collapseDetail(){ if (expanded) { const f = expanded; expanded = f; toggleDetail(f); } }
+function renderDetail(){
+  const r = lastSummary, f = FILTERS[expanded]; if (!r || !f) return;
+  const match = p => f.sts.indexOf(p.st) >= 0;
+  const list = r.people.filter(match);
+  $('detailTitle').textContent = f.title + ' · ' + list.length + ' ຄົນ';
+  const order = (r.teams || []).slice();
+  list.forEach(p => { if (p.team && order.indexOf(p.team) < 0) order.push(p.team); });
+  if (list.some(p => !p.team)) order.push('');
+  let html = '';
+  order.forEach(team => {
+    const members = list.filter(p => (p.team || '') === team)
+      .sort((a, b) => (ST_ORDER[a.st] - ST_ORDER[b.st]) || a.name.localeCompare(b.name));
+    if (!members.length) return;
+    html += '<div class="grp"><h3>' + esc(team || 'ບໍ່ມີທີມ') + '<small>' + members.length + ' ຄົນ</small></h3>' +
+      members.map(p => '<div class="person"><span>' + esc(p.name) + '</span><span class="chip ' + p.st + '">' + esc(chipText(p)) + '</span></div>').join('') + '</div>';
+  });
+  $('detailBody').innerHTML = html || '<div class="emptyAll">ບໍ່ມີໃຜ</div>';
+}
+
 function openTeams(filter){
   if (mode !== 'idle' || !lastSummary) return;
   mode = 'teams';
@@ -306,7 +361,8 @@ function openTeams(filter){
   loadSummary();
 }
 loadSummary(); setInterval(() => { if (mode === 'idle' || mode === 'teams') loadSummary(); }, 60000);
-document.querySelectorAll('.tile[data-filter]').forEach(t => t.addEventListener('click', () => openTeams(t.dataset.filter)));
+document.querySelectorAll('.tile[data-filter]').forEach(t => t.addEventListener('click', e => { e.stopPropagation(); toggleDetail(t.dataset.filter); }));
+$('detailClose').addEventListener('click', e => { e.stopPropagation(); collapseDetail(); });
 $('updated').addEventListener('click', () => openTeams('all'));
 
 // ---------------- models ----------------
@@ -382,6 +438,7 @@ function camText(msg, sub){ $('camMsg').textContent = msg || ''; $('camSub').tex
 
 // ---------------- clock in / out by face ----------------
 async function startFace(a){
+  collapseDetail();
   action = a; mode = 'face';
   $('camTitle').textContent = a === 'In' ? 'ເຂົ້າວຽກ' : 'ອອກວຽກ';
   $('camTitle').className = a === 'In' ? 'in' : 'out';
@@ -477,6 +534,7 @@ function startPin(){
 }
 function startManager(){
   if (mode !== 'idle') return;
+  collapseDetail();
   mode = 'mgr';
   padState = { kind: 'mgr', value: '' };
   $('padTitle').textContent = 'ລົງທະບຽນໃບໜ້າ';
