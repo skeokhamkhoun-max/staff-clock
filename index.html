@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Clock in">
 <title>Clock in</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao+Looped:wght@400;600;700&display=swap" rel="stylesheet">
@@ -62,6 +65,9 @@
   .chip.notyet{background:#EEF1EF;color:#5D7068} .chip.absent{background:#FBE3E1;color:#B3261E}
   .chip.out{background:#E4E7EE;color:#2E3D7C} .chip.off{background:#ECE7F6;color:#5E4B8B} .chip.leave{background:#E1ECF8;color:#2F5F96}
   .emptyTeam{color:var(--muted);font-size:16px;margin-top:8px}
+  .tile{cursor:pointer} .tile:active{transform:scale(.98)}
+  .tile .more{margin-top:auto;font-size:13px;color:var(--muted);font-weight:600}
+  .emptyAll{grid-column:1/-1;text-align:center;color:var(--muted);font-size:22px;padding:40px 0}
   .actions{display:grid;grid-template-columns:1fr 1fr;gap:20px;height:min(30vh,240px)}
   .act{border-radius:22px;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
   .act b{font-size:clamp(34px,5.5vw,60px);font-weight:700}
@@ -122,10 +128,10 @@
   <div class="banner" id="banner"></div>
   <div class="clock" id="clock"></div>
   <div class="summary hidden" id="summary">
-    <div class="tile exp"><div class="lbl">ຕ້ອງມາວຽກມື້ນີ້</div><div class="num" id="sExp">–</div><div class="names" id="nExp"></div></div>
-    <div class="tile work"><div class="lbl">ຢູ່ວຽກແລ້ວ</div><div class="num" id="sWork">–</div><div class="names" id="nWork"></div></div>
-    <div class="tile off"><div class="lbl">ພັກປະຈຳອາທິດ</div><div class="num" id="sOff">–</div><div class="names" id="nOff"></div></div>
-    <div class="tile leave"><div class="lbl">ລາພັກ</div><div class="num" id="sLeave">–</div><div class="names" id="nLeave"></div></div>
+    <div class="tile exp" data-filter="notin"><div class="lbl">ຕ້ອງມາວຽກມື້ນີ້</div><div class="num" id="sExp">–</div><div class="names" id="nExp"></div><div class="more">ເບິ່ງ ›</div></div>
+    <div class="tile work" data-filter="work"><div class="lbl">ຢູ່ວຽກແລ້ວ</div><div class="num" id="sWork">–</div><div class="names" id="nWork"></div><div class="more">ເບິ່ງ ›</div></div>
+    <div class="tile off" data-filter="off"><div class="lbl">ພັກປະຈຳອາທິດ</div><div class="num" id="sOff">–</div><div class="names" id="nOff"></div><div class="more">ເບິ່ງ ›</div></div>
+    <div class="tile leave" data-filter="leave"><div class="lbl">ລາພັກ</div><div class="num" id="sLeave">–</div><div class="names" id="nLeave"></div><div class="more">ເບິ່ງ ›</div></div>
   </div>
   <div class="updated hidden" id="updated"><b>ແຕະເພື່ອເບິ່ງຕາມທີມ ›</b><span id="updTime"></span></div>
   <div class="status" id="loadStatus">ກຳລັງໂຫຼດລະບົບສະແກນໜ້າ…</div>
@@ -182,7 +188,6 @@ const FRONT_MAX = 0.09;          // how straight the face must be when the face 
     if (q.get('branch')) localStorage.setItem('kiosk_branch', q.get('branch'));
     if (q.get('key')) localStorage.setItem('kiosk_key', q.get('key'));
   } catch (e) {}
-  if (q.get('key')) history.replaceState(null, '', location.pathname + (q.get('branch') ? '?branch=' + encodeURIComponent(q.get('branch')) : ''));
 })();
 function setting(k){ try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } }
 const BRANCH = (new URLSearchParams(location.search).get('branch')) || setting('kiosk_branch');
@@ -260,35 +265,49 @@ function chipText(p){
   }
   return '';
 }
+const FILTERS = {
+  all:   { title: 'ທີມມື້ນີ້',        sts: null },
+  work:  { title: 'ຢູ່ວຽກແລ້ວ',      sts: ['in', 'inLate'] },
+  notin: { title: 'ຍັງບໍ່ມາວຽກ',      sts: ['absent', 'notyet'] },
+  off:   { title: 'ພັກປະຈຳອາທິດ',    sts: ['off'] },
+  leave: { title: 'ລາພັກ',          sts: ['leave'] }
+};
+let teamFilter = 'all';
 function renderTeams(){
   const r = lastSummary; if (!r) return;
+  const f = FILTERS[teamFilter] || FILTERS.all;
+  const match = p => !f.sts || f.sts.indexOf(p.st) >= 0;
+  const total = r.people.filter(match).length;
+  $('teamsTitle').textContent = f.title + (f.sts ? ' · ' + total + ' ຄົນ' : '') + ' · ' + BRANCH;
   const order = (r.teams || []).slice();
   r.people.forEach(p => { if (p.team && order.indexOf(p.team) < 0) order.push(p.team); });
   if (r.people.some(p => !p.team)) order.push('');
   const grid = $('teamGrid'); grid.innerHTML = '';
   order.forEach(team => {
-    const members = r.people.filter(p => (p.team || '') === team)
+    const members = r.people.filter(p => (p.team || '') === team && match(p))
       .sort((a, b) => (ST_ORDER[a.st] - ST_ORDER[b.st]) || a.name.localeCompare(b.name));
-    if (!members.length && !team) return;
+    if (!members.length && (!team || f.sts)) return;
     const working = members.filter(p => p.st === 'in' || p.st === 'inLate').length;
     const expected = members.filter(p => p.st !== 'off' && p.st !== 'leave').length;
     const card = document.createElement('div'); card.className = 'team';
-    card.innerHTML = '<h2>' + esc(team || 'ບໍ່ມີທີມ') + '<span>' + working + ' <small>/ ' + expected + '</small></span></h2>' +
+    const count = f.sts ? members.length + ' <small>ຄົນ</small>' : working + ' <small>/ ' + expected + '</small>';
+    card.innerHTML = '<h2>' + esc(team || 'ບໍ່ມີທີມ') + '<span>' + count + '</span></h2>' +
       (members.length ? members.map(p => '<div class="person"><span>' + esc(p.name) + '</span><span class="chip ' + p.st + '">' + esc(chipText(p)) + '</span></div>').join('')
                       : '<div class="emptyTeam">ບໍ່ມີພະນັກງານໃນສາຂານີ້</div>');
     grid.appendChild(card);
   });
+  if (!grid.children.length) grid.innerHTML = '<div class="emptyAll">ບໍ່ມີໃຜ</div>';
 }
-function openTeams(){
+function openTeams(filter){
   if (mode !== 'idle' || !lastSummary) return;
   mode = 'teams';
-  $('teamsTitle').textContent = 'ທີມມື້ນີ້ · ' + BRANCH;
+  teamFilter = FILTERS[filter] ? filter : 'all';
   renderTeams(); show('teams'); resetIdle(45000);
   loadSummary();
 }
 loadSummary(); setInterval(() => { if (mode === 'idle' || mode === 'teams') loadSummary(); }, 60000);
-$('summary').addEventListener('click', openTeams);
-$('updated').addEventListener('click', openTeams);
+document.querySelectorAll('.tile[data-filter]').forEach(t => t.addEventListener('click', () => openTeams(t.dataset.filter)));
+$('updated').addEventListener('click', () => openTeams('all'));
 
 // ---------------- models ----------------
 async function loadModels(){
