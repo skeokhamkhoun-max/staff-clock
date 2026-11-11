@@ -85,6 +85,23 @@
   .grp h3 small{color:var(--muted);font-weight:600}
   .grp .person:first-of-type{margin-top:0}
   .grp .person{border-top:none;border-bottom:1px solid #E3E9E5;padding:7px 0}
+  .extra{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;background:#FFF1D6;color:#8A5A00;font-size:.8em;font-weight:700}
+  .topRight{display:flex;align-items:baseline;gap:16px}
+  .leaveBtn{background:#fff;border-radius:999px;padding:8px 16px;font-size:clamp(15px,1.8vw,18px);font-weight:600;box-shadow:0 2px 0 rgba(20,48,42,.12)}
+
+  /* leave request form */
+  #leaveForm{gap:14px}
+  .formBox{width:min(640px,100%);margin:0 auto;display:flex;flex-direction:column;gap:16px;overflow:auto;flex:1;min-height:0}
+  .fLabel{font-size:18px;font-weight:600;color:var(--muted);margin-bottom:6px}
+  .types{display:flex;flex-wrap:wrap;gap:10px}
+  .types button{border-radius:999px;padding:12px 18px;font-size:18px;background:#fff;box-shadow:0 2px 0 rgba(20,48,42,.12)}
+  .types button.sel{background:var(--ink);color:#fff}
+  .dates{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .dates input,.formBox textarea{width:100%;font-family:inherit;font-size:20px;padding:12px 14px;border-radius:12px;border:2px solid #C9D4CE;background:#fff;color:var(--ink)}
+  .formBox textarea{min-height:80px;resize:none}
+  .daysInfo{font-size:20px;font-weight:600}
+  .sendBtn{border-radius:18px;padding:18px;font-size:26px;font-weight:700;background:var(--in);color:#fff}
+  .sendBtn:disabled{opacity:.4}
   .actions{display:grid;grid-template-columns:1fr 1fr;gap:20px;height:min(30vh,240px)}
   .act{border-radius:22px;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
   .act b{font-size:clamp(34px,5.5vw,60px);font-weight:700}
@@ -141,7 +158,7 @@
 <body>
 
 <section id="home" class="screen on">
-  <div class="top"><div class="branch" id="branchName"></div><div class="date" id="today"></div></div>
+  <div class="top"><div class="branch" id="branchName"></div><div class="topRight"><button class="leaveBtn" id="leaveBtn" onclick="startLeave()">📝 ຂໍລາພັກ</button><div class="date" id="today"></div></div></div>
   <div class="banner" id="banner"></div>
   <div class="clock" id="clock"></div>
   <div class="summary hidden" id="summary">
@@ -165,6 +182,20 @@
 <section id="teams" class="screen">
   <div class="bar"><h1 id="teamsTitle" class="mgr">ທີມມື້ນີ້</h1><button class="ghost" onclick="goHome()">‹ ກັບຄືນ</button></div>
   <div class="teamGrid" id="teamGrid"></div>
+</section>
+
+<section id="leaveForm" class="screen">
+  <div class="bar"><h1 class="mgr" id="leaveTitle">ຂໍລາພັກ</h1><button class="ghost" onclick="goHome()">ຍົກເລີກ</button></div>
+  <div class="formBox">
+    <div><div class="fLabel">ປະເພດການລາ</div><div class="types" id="leaveTypes"></div></div>
+    <div class="dates">
+      <div><div class="fLabel">ຈາກວັນທີ</div><input type="date" id="lvFrom"></div>
+      <div><div class="fLabel">ຫາວັນທີ</div><input type="date" id="lvTo"></div>
+    </div>
+    <div class="daysInfo" id="lvDays"></div>
+    <div><div class="fLabel">ເຫດຜົນ (ບໍ່ບັງຄັບ)</div><textarea id="lvReason" maxlength="200"></textarea></div>
+    <button class="sendBtn" id="lvSend" onclick="sendLeave()">ສົ່ງຄຳຂໍ</button>
+  </div>
 </section>
 
 <section id="cam" class="screen">
@@ -261,7 +292,7 @@ async function loadSummary(){
   $('sExp').textContent = r.expected;
   $('nExp').innerHTML = r.notIn.length ? 'ຍັງບໍ່ມາ: ' + namesHtml(r.notIn) : (r.expected ? 'ມາຄົບແລ້ວ' : '');
   $('sWork').innerHTML = r.atWork.length + ' <small>/ ' + r.expected + '</small>';
-  $('nWork').innerHTML = r.atWork.map(a => (a.late ? '<span class="late">' : '<span>') + esc(a.name) + ' ' + esc(a.time) + '</span>').join(', ')
+  $('nWork').innerHTML = r.atWork.map(a => (a.late ? '<span class="late">' : '<span>') + esc(a.name) + ' ' + esc(a.time) + '</span>' + (a.extra ? '<span class="extra">' + (a.extra === 'dayoff' ? 'ວັນພັກ' : 'ລາພັກ') + '</span>' : '')).join(', ')
     + (r.clockedOut.length ? '<br>ອອກແລ້ວ: ' + namesHtml(r.clockedOut) : '');
   $('sOff').textContent = r.dayOff.length;  $('nOff').innerHTML = namesHtml(r.dayOff);
   $('sLeave').textContent = r.leave.length; $('nLeave').innerHTML = namesHtml(r.leave);
@@ -272,13 +303,14 @@ async function loadSummary(){
   $('updTime').textContent = 'ອັບເດດ ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
 }
 
+function extraText(p){ return p.extra === 'dayoff' ? ' · ວັນພັກ' : p.extra === 'leave' ? ' · ຊ່ວງລາພັກ' : ''; }
 // ---------------- teams page ----------------
 let lastSummary = null;
 const ST_ORDER = { in: 0, inLate: 1, absent: 2, notyet: 3, out: 4, off: 5, leave: 6 };
 function chipText(p){
   switch (p.st) {
-    case 'in': return '✓ ' + p.time;
-    case 'inLate': return 'ຊ້າ · ' + p.time;
+    case 'in': return '✓ ' + p.time + extraText(p);
+    case 'inLate': return 'ຊ້າ · ' + p.time + extraText(p);
     case 'absent': return 'ຍັງບໍ່ມາ (ຊ້າ)';
     case 'notyet': return 'ຍັງບໍ່ມາ · ' + p.shift;
     case 'out': return 'ອອກແລ້ວ ' + (p.out || '');
@@ -440,8 +472,8 @@ function camText(msg, sub){ $('camMsg').textContent = msg || ''; $('camSub').tex
 async function startFace(a){
   collapseDetail();
   action = a; mode = 'face';
-  $('camTitle').textContent = a === 'In' ? 'ເຂົ້າວຽກ' : 'ອອກວຽກ';
-  $('camTitle').className = a === 'In' ? 'in' : 'out';
+  $('camTitle').textContent = (action === 'In' ? 'ເຂົ້າວຽກ' : action === 'Out' ? 'ອອກວຽກ' : 'ຂໍລາພັກ');
+  $('camTitle').className = (action === 'In' ? 'in' : action === 'Out' ? 'out' : 'mgr');
   if (!modelsReady) { startPin(); return; }
   show('cam'); resetIdle(45000);
   runFace();
@@ -502,6 +534,7 @@ async function runFace(){
   samples.forEach(s => s.forEach((x, i) => mean[i] += x / samples.length));
   stopCamera();
   lastPhoto = photo;
+  if (action === 'Leave') { identify({ op: 'identify', descriptor: mean.map(x => Math.round(x * 1e5) / 1e5) }); return; }
   submit({ op: 'face', action: action, descriptor: mean.map(x => Math.round(x * 1e5) / 1e5), photo: photo });
 }
 function faceFail(token, msg, sub){
@@ -526,9 +559,9 @@ function startPin(){
   runToken++;
   mode = 'pin';
   padState = { kind: 'pin', step: 'id', id: '', pin: '' };
-  $('padTitle').textContent = (action === 'In' ? 'ເຂົ້າວຽກ' : 'ອອກວຽກ') + ' · PIN';
-  $('padTitle').className = action === 'In' ? 'in' : 'out';
-  $('hint').textContent = 'ຈະຖ່າຍຮູບໄວ້ເປັນຫຼັກຖານ';
+  $('padTitle').textContent = (action === 'In' ? 'ເຂົ້າວຽກ' : action === 'Out' ? 'ອອກວຽກ' : 'ຂໍລາພັກ') + ' · PIN';
+  $('padTitle').className = (action === 'In' ? 'in' : action === 'Out' ? 'out' : 'mgr');
+  $('hint').textContent = action === 'Leave' ? 'ຢືນຢັນຕົວຕົນກ່ອນຂໍລາພັກ' : 'ຈະຖ່າຍຮູບໄວ້ເປັນຫຼັກຖານ';
   show('pad'); renderPad(); resetIdle();
   startCamera();   // keep camera on so a photo is taken with the PIN
 }
@@ -570,6 +603,7 @@ function press(k){
       else if (s.step === 'pin' && s.pin.length >= 4) {
         const photo = grabPhoto(); lastPhoto = photo;
         stopCamera();
+        if (action === 'Leave') { identify({ op: 'verify', id: s.id, pin: s.pin }); return; }
         submit({ op: 'pin', action: action, id: s.id, pin: s.pin, photo: photo });
         return;
       }
@@ -645,6 +679,59 @@ async function startEnroll(id){
   } else showError(r);
 }
 
+// ---------------- leave request ----------------
+const LEAVE_TYPES = [['Annual leave','ລາພັກປະຈຳປີ'],['Sick leave','ລາປ່ວຍ'],['Personal leave','ລາກິດ'],['Unpaid leave','ລາບໍ່ໄດ້ເງິນເດືອນ'],['Other','ອື່ນໆ']];
+let leaveToken = '', leaveType = '';
+function ymd(d){ return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+function startLeave(){
+  if (mode !== 'idle') return;
+  if (!KEY) { showError({ code: 'badkey' }); return; }
+  startFace('Leave');
+}
+async function identify(body){
+  if (busy) return; busy = true;
+  clearTimeout(idleTimer);
+  result('busy', 'ກຳລັງກວດສອບ…', '', '');
+  const r = await api(body);
+  busy = false;
+  if (r && r.ok) openLeaveForm(r); else showError(r);
+}
+function openLeaveForm(r){
+  leaveToken = r.token; leaveType = '';
+  mode = 'leaveForm';
+  $('leaveTitle').textContent = 'ຂໍລາພັກ · ' + r.name;
+  const box = $('leaveTypes'); box.innerHTML = '';
+  LEAVE_TYPES.forEach(([val, lbl]) => {
+    const b = document.createElement('button'); b.textContent = lbl;
+    b.onclick = () => { leaveType = val; box.querySelectorAll('button').forEach(x => x.classList.toggle('sel', x === b)); checkLeave(); };
+    box.appendChild(b);
+  });
+  const now = new Date(), min = new Date(now.getTime() - 7 * 86400000), max = new Date(now.getTime() + 365 * 86400000);
+  ['lvFrom','lvTo'].forEach(k => { $(k).min = ymd(min); $(k).max = ymd(max); $(k).value = ymd(now); $(k).onchange = checkLeave; });
+  $('lvReason').value = '';
+  show('leaveForm'); checkLeave(); resetIdle(180000);
+}
+function checkLeave(){
+  resetIdle(180000);
+  const f = $('lvFrom').value, t = $('lvTo').value;
+  if (f && t && t < f) $('lvTo').value = f;
+  const tt = $('lvTo').value;
+  const days = f && tt ? Math.round((new Date(tt) - new Date(f)) / 86400000) + 1 : 0;
+  $('lvDays').textContent = days > 0 ? 'ລວມ ' + days + ' ມື້' : '';
+  $('lvSend').disabled = !leaveType || days < 1 || days > 60;
+}
+async function sendLeave(){
+  if (busy || $('lvSend').disabled) return; busy = true;
+  clearTimeout(idleTimer);
+  result('busy', 'ກຳລັງສົ່ງ…', '', '');
+  const r = await api({ op: 'leave', token: leaveToken, type: leaveType, from: $('lvFrom').value, to: $('lvTo').value, reason: $('lvReason').value });
+  busy = false;
+  if (r && r.ok) {
+    result('good-mgr', 'ສົ່ງຄຳຂໍລາພັກແລ້ວ', '', r.from + ' → ' + r.to + ' · ' + r.days + ' ມື້', 'ລໍຖ້າຫົວໜ້າອະນຸມັດ');
+    resetIdle(7000);
+  } else showError(r);
+}
+
 // ---------------- talk to the sheet ----------------
 async function api(body){
   body.key = KEY; body.branch = BRANCH;
@@ -691,6 +778,9 @@ function showError(r){
     duplicate:['ໜ້ານີ້ຄ້າຍກັບ ' + (r && r.name) + ' ທີ່ລົງທະບຽນແລ້ວ', 'ກວດລະຫັດພະນັກງານອີກຄັ້ງ'],
     badkey:   ['ເຄື່ອງນີ້ຍັງບໍ່ໄດ້ເຊື່ອມຕໍ່ລະບົບ', 'ເປີດລິ້ງທີ່ມີ key= ໃນເຄື່ອງນີ້'],
     network:  ['ເຊື່ອມຕໍ່ບໍ່ໄດ້', 'ກວດ Wi-Fi ແລ້ວລອງໃໝ່'],
+    overlap:  ['ມີຄຳຂໍລາພັກໃນວັນດັ່ງກ່າວແລ້ວ', (r && r.from ? r.from + ' → ' + r.to + ' · ' : '') + (r && r.status === 'Yes' ? 'ອະນຸມັດແລ້ວ' : 'ລໍຖ້າອະນຸມັດ')],
+    baddate:  ['ວັນທີບໍ່ຖືກຕ້ອງ', 'ເລືອກວັນທີໃໝ່ (ສູງສຸດ 60 ມື້)'],
+    expired:  ['ໝົດເວລາ', 'ກະລຸນາເລີ່ມຂໍລາພັກໃໝ່'],
     bad:      ['ບັນທຶກບໍ່ໄດ້', 'ລອງໃໝ່ອີກຄັ້ງ'],
     error:    ['ບັນທຶກບໍ່ໄດ້', 'ລອງໃໝ່ອີກຄັ້ງ']
   }[c] || ['ບັນທຶກບໍ່ໄດ້', 'ລອງໃໝ່ອີກຄັ້ງ'];
