@@ -102,6 +102,13 @@
   .daysInfo{font-size:20px;font-weight:600}
   .sendBtn{border-radius:18px;padding:18px;font-size:26px;font-weight:700;background:var(--in);color:#fff}
   .sendBtn:disabled{opacity:.4}
+  .menuBox{width:min(560px,100%);margin:auto;display:flex;flex-direction:column;gap:18px}
+  .menuBtn{border-radius:20px;padding:26px 22px;font-size:clamp(22px,3vw,28px);font-weight:700;background:#fff;box-shadow:0 2px 0 rgba(20,48,42,.12);text-align:left}
+  .menuBtn small{display:block;font-size:.6em;font-weight:500;color:var(--muted);margin-top:4px}
+  .menuInfo{text-align:center;color:var(--muted);font-size:18px}
+  #choice{align-items:center;justify-content:center;text-align:center;gap:18px;background:#FFF6E0}
+  #choiceTitle{font-size:clamp(28px,4.5vw,44px);font-weight:700;margin:0}
+  #choiceSub{font-size:clamp(18px,2.6vw,24px);max-width:34ch;color:var(--muted)}
   .actions{display:grid;grid-template-columns:1fr 1fr;gap:20px;height:min(30vh,240px)}
   .act{border-radius:22px;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
   .act b{font-size:clamp(34px,5.5vw,60px);font-weight:700}
@@ -196,6 +203,31 @@
     <div><div class="fLabel">ເຫດຜົນ (ບໍ່ບັງຄັບ)</div><textarea id="lvReason" maxlength="200"></textarea></div>
     <button class="sendBtn" id="lvSend" onclick="sendLeave()">ສົ່ງຄຳຂໍ</button>
   </div>
+</section>
+
+<section id="mgrMenu" class="screen">
+  <div class="bar"><h1 class="mgr">ຜູ້ຈັດການ</h1><button class="ghost" onclick="goHome()">ອອກ</button></div>
+  <div class="menuBox">
+    <button class="menuBtn" onclick="mgrPick('enrollId')">📷 ລົງທະບຽນໃບໜ້າ<small>Register a face</small></button>
+    <button class="menuBtn" onclick="mgrPick('manualId')">✍️ ບັນທຶກເຂົ້າ/ອອກວຽກແທນ<small>Clock in or out for a staff member</small></button>
+    <div class="menuInfo" id="mgrInfo"></div>
+  </div>
+</section>
+
+<section id="manualForm" class="screen">
+  <div class="bar"><h1 class="mgr" id="manTitle">ບັນທຶກແທນ</h1><button class="ghost" onclick="showMgrMenu()">ກັບຄືນ</button></div>
+  <div class="formBox">
+    <div><div class="fLabel">ບັນທຶກ</div><div class="types" id="manAction"></div></div>
+    <div class="dates"><div><div class="fLabel">ເວລາ (ມື້ນີ້)</div><input type="time" id="manTime"></div><div></div></div>
+    <div><div class="fLabel">ເຫດຜົນ</div><div class="types" id="manReason"></div></div>
+    <button class="sendBtn" id="manSend" onclick="sendManual()">ບັນທຶກ</button>
+  </div>
+</section>
+
+<section id="choice" class="screen">
+  <p id="choiceTitle"></p>
+  <div id="choiceSub"></div>
+  <div class="row" id="choiceBtns"></div>
 </section>
 
 <section id="cam" class="screen">
@@ -401,7 +433,7 @@ $('updated').addEventListener('click', () => openTeams('all'));
 async function loadModels(){
   try {
     if (typeof faceapi === 'undefined') throw new Error('no faceapi');
-    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
     await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
     await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
     modelsReady = true;
@@ -432,7 +464,7 @@ function goHome(){
 async function startCamera(){
   if (stream) return true;
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
     const v = $('video'); v.srcObject = stream;
     await v.play().catch(() => {});
     await new Promise(r => { if (v.readyState >= 2) r(); else v.onloadeddata = () => r(); });
@@ -463,7 +495,7 @@ function yawOf(landmarks){
   return (nose - left) / (right - left) - 0.5;
 }
 function faceBigEnough(det, v){ return det.detection.box.width > v.videoWidth * 0.22; }
-const detOpts = () => new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
+const detOpts = () => new faceapi.SsdMobilenetv1Options({ minConfidence: 0.6 });
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 function camText(msg, sub){ $('camMsg').textContent = msg || ''; $('camSub').textContent = sub || ''; }
@@ -583,8 +615,8 @@ function renderPad(){
     else { prompt = 'ໃສ່ລະຫັດ PIN'; shown = '•'.repeat(s.pin.length); ready = s.pin.length >= 4; go = 'ຢືນຢັນ'; }
   } else if (s.kind === 'mgr') {
     prompt = 'ໃສ່ລະຫັດຜູ້ຈັດການ'; shown = '•'.repeat(s.value.length); ready = s.value.length >= 4;
-  } else if (s.kind === 'enrollId') {
-    prompt = 'ລະຫັດພະນັກງານທີ່ຈະລົງທະບຽນໜ້າ'; shown = s.value; ready = s.value.length > 0;
+  } else if (s.kind === 'enrollId' || s.kind === 'manualId') {
+    prompt = s.kind === 'enrollId' ? 'ລະຫັດພະນັກງານທີ່ຈະລົງທະບຽນໜ້າ' : 'ລະຫັດພະນັກງານ'; shown = s.value; ready = s.value.length > 0;
   }
   $('prompt').textContent = prompt; $('display').textContent = shown;
   $('goKey').textContent = go; $('goKey').disabled = !ready;
@@ -614,6 +646,9 @@ function press(k){
     } else if (s.kind === 'enrollId' && s.value) {
       startEnroll(s.value);
       return;
+    } else if (s.kind === 'manualId' && s.value) {
+      openManual(s.value);
+      return;
     }
   } else if (s[field].length < max) s[field] += k;
   renderPad();
@@ -626,7 +661,7 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'Escape') goHome();
 });
 
-// ---------------- manager: register faces ----------------
+// ---------------- manager menu ----------------
 let staffCache = [];
 async function checkManager(){
   busy = true;
@@ -634,49 +669,124 @@ async function checkManager(){
   busy = false;
   if (!r || !r.ok) { showError(r); return; }
   staffCache = r.staff || [];
-  padState = { kind: 'enrollId', value: '' };
-  const done = staffCache.filter(s => s.enrolled).length;
-  $('hint').textContent = 'ລົງທະບຽນແລ້ວ ' + done + ' / ' + staffCache.length + ' ຄົນ';
-  renderPad();
+  showMgrMenu();
 }
+function showMgrMenu(){
+  runToken++; stopCamera(); busy = false;
+  mode = 'mgr'; padState = null;
+  const done = staffCache.filter(s => s.enrolled).length;
+  $('mgrInfo').textContent = 'ລົງທະບຽນໜ້າແລ້ວ ' + done + ' / ' + staffCache.length + ' ຄົນ';
+  show('mgrMenu'); resetIdle(90000);
+}
+function mgrPick(kind){
+  padState = { kind: kind, value: '' };
+  $('padTitle').textContent = kind === 'enrollId' ? 'ລົງທະບຽນໃບໜ້າ' : 'ບັນທຶກເຂົ້າ/ອອກແທນ';
+  $('padTitle').className = 'mgr'; $('hint').textContent = '';
+  show('pad'); renderPad(); resetIdle();
+}
+function backToMenuAfter(){ afterResult = showMgrMenu; }
+function showChoice(title, sub, buttons){
+  $('choiceTitle').textContent = title; $('choiceSub').textContent = sub;
+  const box = $('choiceBtns'); box.innerHTML = '';
+  buttons.forEach(([label, fn, dark]) => { const b = document.createElement('button'); b.className = 'pill' + (dark ? ' dark' : ''); b.textContent = label; b.onclick = fn; box.appendChild(b); });
+  show('choice'); resetIdle(60000);
+}
+
+// ---------------- register a face: 10 samples from 3 angles ----------------
+let enrollPerson = null, enrollSamples = [];
 async function startEnroll(id){
   const person = staffCache.find(s => s.id === id);
   if (!person) { $('hint').textContent = 'ບໍ່ພົບລະຫັດພະນັກງານນີ້'; padState.value = ''; renderPad(); return; }
   if (!modelsReady) { $('hint').textContent = 'ລະບົບສະແກນໜ້າຍັງບໍ່ພ້ອມ'; return; }
+  enrollPerson = person; enrollSamples = [];
   mode = 'enroll';
   $('camTitle').textContent = 'ລົງທະບຽນ: ' + person.name;
   $('camTitle').className = 'mgr';
   $('camButtons').classList.add('hidden');
-  show('cam'); resetIdle(60000);
+  show('cam'); resetIdle(90000);
   const token = ++runToken;
   camText('ກຳລັງເປີດກ້ອງ…');
   if (!(await startCamera())) { camText('ເປີດກ້ອງບໍ່ໄດ້', 'ອະນຸຍາດໃຫ້ໃຊ້ກ້ອງໃນ browser'); return; }
-  const v = $('video'); const samples = []; const deadline = Date.now() + 30000;
-  camText('ໃຫ້ ' + person.name + ' ເບິ່ງກ້ອງ ແລະ ຢູ່ນິ່ງໆ', 'Look straight at the camera');
-  while (Date.now() < deadline && samples.length < 6) {
-    if (token !== runToken) return;
-    const det = await faceapi.detectSingleFace(v, detOpts()).withFaceLandmarks().withFaceDescriptor();
-    if (token !== runToken) return;
-    if (det && faceBigEnough(det, v) && Math.abs(yawOf(det.landmarks)) < FRONT_MAX) {
-      samples.push(Array.from(det.descriptor).map(x => Math.round(x * 1e5) / 1e5));
-      $('oval').classList.add('good');
-      camText('ກຳລັງບັນທຶກ… ' + samples.length + ' / 6', 'Hold still');
-      await sleep(350);
-    } else { $('oval').classList.remove('good'); await sleep(80); }
+  const v = $('video'); const deadline = Date.now() + 60000;
+  let side = 0;
+  const poses = [
+    { n: 4, msg: 'ເບິ່ງກ້ອງຊື່ໆ ແລະ ຢູ່ນິ່ງໆ', sub: 'Look straight at the camera', ok: y => Math.abs(y) < 0.06 },
+    { n: 3, msg: 'ຫັນໜ້າໄປທາງຂ້າງໜ້ອຍໜຶ່ງ', sub: 'Turn your head a little to one side', ok: y => Math.abs(y) >= 0.06 && Math.abs(y) <= 0.2 },
+    { n: 3, msg: 'ຫັນໜ້າໄປອີກຂ້າງໜ້ອຍໜຶ່ງ', sub: 'Now a little to the other side', ok: y => Math.abs(y) >= 0.06 && Math.abs(y) <= 0.2 && Math.sign(y) === -side }
+  ];
+  const total = poses.reduce((a, p) => a + p.n, 0);
+  for (let pi = 0; pi < poses.length; pi++) {
+    const pose = poses[pi]; let got = 0;
+    while (got < pose.n && Date.now() < deadline) {
+      if (token !== runToken) return;
+      camText(pose.msg + ' · ' + enrollSamples.length + ' / ' + total, pose.sub);
+      const det = await faceapi.detectSingleFace(v, detOpts()).withFaceLandmarks().withFaceDescriptor();
+      if (token !== runToken) return;
+      const good = det && det.detection.score >= 0.8 && det.detection.box.width > v.videoWidth * 0.25 && pose.ok(yawOf(det.landmarks));
+      if (good) {
+        if (pi === 1 && !side) side = Math.sign(yawOf(det.landmarks));
+        enrollSamples.push(Array.from(det.descriptor).map(x => Math.round(x * 1e4) / 1e4));
+        got++;
+        $('oval').classList.add('good');
+        await sleep(300);
+      } else {
+        $('oval').classList.remove('good');
+        if (det && det.detection.box.width <= v.videoWidth * 0.25) camText('ເຂົ້າມາໃກ້ກ້ອງອີກໜ້ອຍ · ' + enrollSamples.length + ' / ' + total, 'Come a little closer');
+        await sleep(80);
+      }
+    }
   }
-  if (samples.length < 6) { camText('ບັນທຶກບໍ່ສຳເລັດ', 'ລອງໃໝ່ໃນບ່ອນທີ່ມີແສງດີ'); return; }
+  if (enrollSamples.length < total) { camText('ບັນທຶກບໍ່ສຳເລັດ', 'ລອງໃໝ່ໃນບ່ອນທີ່ມີແສງດີ'); $('camButtons').classList.add('hidden'); return; }
   stopCamera();
+  sendEnroll(false);
+}
+async function sendEnroll(force){
   busy = true; result('busy', 'ກຳລັງບັນທຶກ…', '', '');
-  const r = await api({ op: 'enroll', manager: managerCode, id: person.id, descriptors: samples });
+  const r = await api({ op: 'enroll', manager: managerCode, id: enrollPerson.id, descriptors: enrollSamples, force: force });
   busy = false;
   if (r && r.ok) {
-    person.enrolled = true;
-    result('good-mgr', 'ບັນທຶກໜ້າ ' + r.name + ' ແລ້ວ', '', 'ແຕະໜ້າຈໍເພື່ອລົງທະບຽນຄົນຕໍ່ໄປ');
-    resetIdle(20000);
-    afterResult = () => { padState = { kind: 'enrollId', value: '' }; mode = 'mgr'; show('pad'); renderPad();
-      const done = staffCache.filter(s => s.enrolled).length;
-      $('hint').textContent = 'ລົງທະບຽນແລ້ວ ' + done + ' / ' + staffCache.length + ' ຄົນ'; resetIdle(); };
-  } else showError(r);
+    enrollPerson.enrolled = true;
+    result('good-mgr', 'ບັນທຶກໜ້າ ' + r.name + ' ແລ້ວ', '', 'ແຕະໜ້າຈໍເພື່ອກັບໄປເມນູ', r.warned ? 'ຖ້າສະແກນບໍ່ຜ່ານ ໃຫ້ໃຊ້ PIN' : '');
+    resetIdle(20000); backToMenuAfter();
+  } else if (r && r.code === 'similar') {
+    showChoice('ໜ້າຄ້າຍກັບ ' + r.name, 'ຖ້າແນ່ໃຈວ່າແມ່ນ ' + enrollPerson.name + ' ແທ້ ກົດ "ບັນທຶກຕໍ່". ຖ້າສະແກນບໍ່ຜ່ານໃນພາຍຫຼັງ ລະບົບຈະຂໍ PIN.', [
+      ['ບັນທຶກຕໍ່', () => sendEnroll(true), true],
+      ['ລອງໃໝ່', () => startEnroll(enrollPerson.id)],
+      ['ຍົກເລີກ', showMgrMenu]
+    ]);
+  } else { showError(r); backToMenuAfter(); }
+}
+
+// ---------------- manager clocks someone in or out ----------------
+let manPerson = null, manAction = '', manReason = '';
+const MAN_REASONS = ['ລືມສະແກນ', 'ສະແກນໜ້າບໍ່ໄດ້', 'ເຮັດວຽກນອກສະຖານທີ່', 'ອື່ນໆ'];
+function openManual(id){
+  const person = staffCache.find(s => s.id === id);
+  if (!person) { $('hint').textContent = 'ບໍ່ພົບລະຫັດພະນັກງານນີ້'; padState.value = ''; renderPad(); return; }
+  manPerson = person; manAction = ''; manReason = '';
+  mode = 'manual';
+  $('manTitle').textContent = 'ບັນທຶກແທນ · ' + person.name;
+  const pick = (boxId, items, onPick) => {
+    const box = $(boxId); box.innerHTML = '';
+    items.forEach(([val, lbl]) => { const b = document.createElement('button'); b.textContent = lbl;
+      b.onclick = () => { onPick(val); box.querySelectorAll('button').forEach(x => x.classList.toggle('sel', x === b)); checkManual(); }; box.appendChild(b); });
+  };
+  pick('manAction', [['In', 'ເຂົ້າວຽກ'], ['Out', 'ອອກວຽກ']], v => manAction = v);
+  pick('manReason', MAN_REASONS.map(x => [x, x]), v => manReason = v);
+  const d = new Date(); $('manTime').value = pad2(d.getHours()) + ':' + pad2(d.getMinutes()); $('manTime').onchange = checkManual;
+  show('manualForm'); checkManual(); resetIdle(120000);
+}
+function checkManual(){ resetIdle(120000); $('manSend').disabled = !manAction || !manReason || !$('manTime').value; }
+async function sendManual(){
+  if (busy || $('manSend').disabled) return; busy = true;
+  result('busy', 'ກຳລັງບັນທຶກ…', '', '');
+  const r = await api({ op: 'manual', manager: managerCode, id: manPerson.id, action: manAction, time: $('manTime').value, reason: manReason });
+  busy = false;
+  if (r && r.ok) {
+    const tag = r.action === 'In' ? lateTag(r.minutes) : ('ເຮັດວຽກ ' + Math.floor((r.worked || 0) / 60) + ' ຊົ່ວໂມງ ' + ((r.worked || 0) % 60) + ' ນາທີ');
+    result(r.action === 'In' ? 'good-in' : 'good-out', r.name, r.time, 'ບັນທຶກ' + (r.action === 'In' ? 'ເຂົ້າ' : 'ອອກ') + 'ວຽກແທນແລ້ວ', tag);
+    resetIdle(20000); backToMenuAfter(); setTimeout(loadSummary, 1500);
+  } else { showError(r); backToMenuAfter(); }
 }
 
 // ---------------- leave request ----------------
@@ -775,7 +885,10 @@ function showError(r){
     locked:   ['ໃສ່ລະຫັດຜິດຫຼາຍເທື່ອ', 'ລໍ 5 ນາທີ ຫຼື ແຈ້ງຫົວໜ້າ'],
     already:  [(r && r.name ? r.name + ' ' : '') + 'ເຂົ້າວຽກແລ້ວ', 'ເຂົ້າວຽກເວລາ ' + (r && r.time) + '. ຖ້າຈະອອກ ໃຫ້ກົດ ອອກວຽກ'],
     notin:    [(r && r.name ? r.name + ' ' : '') + 'ຍັງບໍ່ໄດ້ເຂົ້າວຽກ', 'ໃຫ້ກົດ ເຂົ້າວຽກ ກ່ອນ'],
-    duplicate:['ໜ້ານີ້ຄ້າຍກັບ ' + (r && r.name) + ' ທີ່ລົງທະບຽນແລ້ວ', 'ກວດລະຫັດພະນັກງານອີກຄັ້ງ'],
+    duplicate:['ໜ້ານີ້ລົງທະບຽນແລ້ວເປັນ ' + (r && r.name), 'ກວດລະຫັດພະນັກງານອີກຄັ້ງ'],
+    unsure:   ['ບໍ່ແນ່ໃຈວ່າແມ່ນໃຜ', 'ລອງໃໝ່ ຫຼື ໃຊ້ລະຫັດ PIN'],
+    unstable: ['ບັນທຶກໃບໜ້າບໍ່ຊັດ', 'ລອງໃໝ່ໃນບ່ອນແສງດີ ແລະ ຢູ່ນິ່ງໆ'],
+    future:   ['ເວລາບໍ່ຖືກຕ້ອງ', 'ເລືອກເວລາທີ່ຜ່ານມາແລ້ວ'],
     badkey:   ['ເຄື່ອງນີ້ຍັງບໍ່ໄດ້ເຊື່ອມຕໍ່ລະບົບ', 'ເປີດລິ້ງທີ່ມີ key= ໃນເຄື່ອງນີ້'],
     network:  ['ເຊື່ອມຕໍ່ບໍ່ໄດ້', 'ກວດ Wi-Fi ແລ້ວລອງໃໝ່'],
     overlap:  ['ມີຄຳຂໍລາພັກໃນວັນດັ່ງກ່າວແລ້ວ', (r && r.from ? r.from + ' → ' + r.to + ' · ' : '') + (r && r.status === 'Yes' ? 'ອະນຸມັດແລ້ວ' : 'ລໍຖ້າອະນຸມັດ')],
