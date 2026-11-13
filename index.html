@@ -454,7 +454,7 @@ function show(id){
 function resetIdle(ms){ clearTimeout(idleTimer); idleTimer = setTimeout(goHome, ms || 30000); }
 function goHome(){
   clearTimeout(idleTimer); runToken++; busy = false; mode = 'idle';
-  action = null; padState = null; managerCode = ''; lastPhoto = ''; afterResult = null;
+  action = null; padState = null; managerCode = ''; lastPhoto = ''; afterResult = null; faceId = '';
   stopCamera();
   $('result').className = 'screen';
   show('home');
@@ -506,10 +506,17 @@ async function startFace(a){
   action = a; mode = 'face';
   $('camTitle').textContent = (action === 'In' ? 'ເຂົ້າວຽກ' : action === 'Out' ? 'ອອກວຽກ' : 'ຂໍລາພັກ');
   $('camTitle').className = (action === 'In' ? 'in' : action === 'Out' ? 'out' : 'mgr');
+  faceId = '';
   if (!modelsReady) { startPin(); return; }
-  show('cam'); resetIdle(45000);
-  runFace();
+  mode = 'faceId';
+  padState = { kind: 'faceId', value: '' };
+  $('padTitle').textContent = $('camTitle').textContent;
+  $('padTitle').className = $('camTitle').className;
+  $('hint').textContent = 'ແລ້ວສະແກນໃບໜ້າ';
+  show('pad'); renderPad(); resetIdle();
+  startCamera();   // warm up the camera while the ID is typed
 }
+let faceId = '';
 function retryFace(){ if (action) { resetIdle(45000); runFace(); } }
 
 async function runFace(){
@@ -524,7 +531,7 @@ async function runFace(){
   }
   const v = $('video');
   const deadline = Date.now() + FACE_TIMEOUT_MS;
-  const samples = []; let base = null, photo = '';
+  const samples = []; let base = null, photo = '', baseMouth = 0;
 
   // step 1: straight face, take the face code
   camText('ຫັນໜ້າເຂົ້າກ້ອງ ໃຫ້ໜ້າຢູ່ໃນວົງ', 'Look at the camera');
@@ -536,6 +543,7 @@ async function runFace(){
       const yaw = yawOf(det.landmarks);
       if (Math.abs(yaw) < FRONT_MAX) {
         samples.push(Array.from(det.descriptor));
+        baseMouth += mouthOpen(det.landmarks);
         if (!photo) photo = grabPhoto();
         base = base === null ? yaw : base;
         $('oval').classList.add('good');
@@ -549,26 +557,36 @@ async function runFace(){
   }
   if (samples.length < 3) return faceFail(token, 'ບໍ່ເຫັນໃບໜ້າ', 'ລອງໃໝ່ ຫຼື ໃຊ້ລະຫັດ PIN');
 
-  // step 2: liveness — turn the head a little
-  camText('ຄ່ອຍໆ ຫັນໜ້າໄປຊ້າຍ ຫຼື ຂວາ', 'Slowly turn your head to one side');
-  let turned = false;
-  while (Date.now() < deadline) {
+  // step 2: liveness — a random challenge, so a photo or a recorded video cannot pass
+  const ch = CHALLENGES[Math.floor(Math.random() * CHALLENGES.length)];
+  camText(ch.msg, ch.sub);
+  let passed = false;
+  const chDeadline = Math.max(deadline, Date.now() + 8000);
+  while (Date.now() < chDeadline) {
     if (token !== runToken) return;
     const det = await faceapi.detectSingleFace(v, detOpts()).withFaceLandmarks();
     if (token !== runToken) return;
-    if (det && faceBigEnough(det, v) && Math.abs(yawOf(det.landmarks) - base) > TURN_NEEDED) { turned = true; break; }
+    if (det && faceBigEnough(det, v) && ch.test(det.landmarks, { yaw: base, mouth: baseMouth / samples.length })) { passed = true; break; }
     await sleep(50);
   }
-  if (!turned) return faceFail(token, 'ກວດບໍ່ຜ່ານ', 'ຫັນໜ້າຊ້າໆ ແລ້ວລອງໃໝ່ ຫຼື ໃຊ້ລະຫັດ PIN');
+  if (!passed) return faceFail(token, 'ກວດບໍ່ຜ່ານ', ch.fail + ' ຫຼື ໃຊ້ລະຫັດ PIN');
 
   // step 3: send to the sheet
   const mean = new Array(128).fill(0);
   samples.forEach(s => s.forEach((x, i) => mean[i] += x / samples.length));
   stopCamera();
   lastPhoto = photo;
-  if (action === 'Leave') { identify({ op: 'identify', descriptor: mean.map(x => Math.round(x * 1e5) / 1e5) }); return; }
-  submit({ op: 'face', action: action, descriptor: mean.map(x => Math.round(x * 1e5) / 1e5), photo: photo });
+  if (action === 'Leave') { identify({ op: 'identify', id: faceId, descriptor: mean.map(x => Math.round(x * 1e5) / 1e5) }); return; }
+  submit({ op: 'face', action: action, id: faceId, descriptor: mean.map(x => Math.round(x * 1e5) / 1e5), photo: photo });
 }
+function dist2(a, b){ return Math.hypot(a.x - b.x, a.y - b.y); }
+function mouthOpen(landmarks){ const p = landmarks.positions; return dist2(p[62], p[66]) / dist2(p[27], p[8]); }
+const CHALLENGES = [
+  { msg: 'ຄ່ອຍໆ ຫັນໜ້າໄປທາງຂ້າງ', sub: 'Slowly turn your head to one side', fail: 'ຫັນໜ້າຊ້າໆ ແລ້ວລອງໃໝ່',
+    test: (lm, b) => Math.abs(yawOf(lm) - b.yaw) > TURN_NEEDED },
+  { msg: 'ອ້າປາກກວ້າງໆ', sub: 'Open your mouth wide', fail: 'ອ້າປາກໃຫ້ກວ້າງ ແລ້ວລອງໃໝ່',
+    test: (lm, b) => mouthOpen(lm) > b.mouth + 0.08 }
+];
 function faceFail(token, msg, sub){
   if (token !== runToken) return;
   $('oval').classList.remove('good');
@@ -590,7 +608,7 @@ KEYS.forEach(k => {
 function startPin(){
   runToken++;
   mode = 'pin';
-  padState = { kind: 'pin', step: 'id', id: '', pin: '' };
+  padState = { kind: 'pin', step: faceId ? 'pin' : 'id', id: faceId || '', pin: '' };
   $('padTitle').textContent = (action === 'In' ? 'ເຂົ້າວຽກ' : action === 'Out' ? 'ອອກວຽກ' : 'ຂໍລາພັກ') + ' · PIN';
   $('padTitle').className = (action === 'In' ? 'in' : action === 'Out' ? 'out' : 'mgr');
   $('hint').textContent = action === 'Leave' ? 'ຢືນຢັນຕົວຕົນກ່ອນຂໍລາພັກ' : 'ຈະຖ່າຍຮູບໄວ້ເປັນຫຼັກຖານ';
@@ -615,6 +633,8 @@ function renderPad(){
     else { prompt = 'ໃສ່ລະຫັດ PIN'; shown = '•'.repeat(s.pin.length); ready = s.pin.length >= 4; go = 'ຢືນຢັນ'; }
   } else if (s.kind === 'mgr') {
     prompt = 'ໃສ່ລະຫັດຜູ້ຈັດການ'; shown = '•'.repeat(s.value.length); ready = s.value.length >= 4;
+  } else if (s.kind === 'faceId') {
+    prompt = 'ໃສ່ລະຫັດພະນັກງານ'; shown = s.value; ready = s.value.length > 0;
   } else if (s.kind === 'enrollId' || s.kind === 'manualId') {
     prompt = s.kind === 'enrollId' ? 'ລະຫັດພະນັກງານທີ່ຈະລົງທະບຽນໜ້າ' : 'ລະຫັດພະນັກງານ'; shown = s.value; ready = s.value.length > 0;
   }
@@ -648,6 +668,10 @@ function press(k){
       return;
     } else if (s.kind === 'manualId' && s.value) {
       openManual(s.value);
+      return;
+    } else if (s.kind === 'faceId' && s.value) {
+      faceId = s.value; mode = 'face';
+      show('cam'); resetIdle(45000); runFace();
       return;
     }
   } else if (s[field].length < max) s[field] += k;
@@ -878,7 +902,8 @@ function onResult(r){
 function showError(r){
   const c = r ? r.code : 'bad';
   const msg = {
-    nomatch:  ['ບໍ່ຮູ້ຈັກໃບໜ້ານີ້', 'ລອງໃໝ່ ຫຼື ໃຊ້ລະຫັດ PIN'],
+    nomatch:  ['ໃບໜ້າບໍ່ກົງກັບລະຫັດນີ້', (r && r.left > 0 ? 'ລອງໄດ້ອີກ ' + r.left + ' ເທື່ອ · ' : '') + 'ກວດລະຫັດພະນັກງານ ຫຼື ໃຊ້ PIN'],
+    noface:   ['ລະຫັດນີ້ຍັງບໍ່ໄດ້ລົງທະບຽນໃບໜ້າ', 'ໃຊ້ລະຫັດ PIN ຫຼື ແຈ້ງຫົວໜ້າໃຫ້ລົງທະບຽນ'],
     notfound: ['ບໍ່ພົບລະຫັດພະນັກງານນີ້', 'ກວດລະຫັດແລ້ວລອງໃໝ່'],
     badpin:   ['ລະຫັດ PIN ບໍ່ຖືກຕ້ອງ', r && r.left > 0 ? 'ລອງໄດ້ອີກ ' + r.left + ' ເທື່ອ' : 'ລໍ 5 ນາທີ ຫຼື ແຈ້ງຫົວໜ້າ'],
     badmgr:   ['ລະຫັດຜູ້ຈັດການບໍ່ຖືກຕ້ອງ', ''],
