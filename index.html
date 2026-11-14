@@ -151,6 +151,10 @@
   .apprCard.done{opacity:.55}
   .apprEmpty{text-align:center;font-size:22px;color:var(--muted);margin-top:40px}
   .apprBtn{color:var(--in);font-weight:700}
+  .apprBadge{color:var(--in);margin-right:8px} .apprBadge b{background:var(--in);color:#fff;border-radius:999px;padding:1px 9px;margin-left:4px}
+  .apprCard .log{font-size:15px;color:var(--in);margin-top:4px}
+  .apprCard .wait{font-size:15px;color:#9a5b00;margin-top:4px;font-weight:600}
+  .apprCard .fwd{font-size:17px;font-weight:700;color:var(--in);max-width:190px;text-align:right}
 
   /* keypad */
   #pad{align-items:center}
@@ -182,7 +186,7 @@
 <body>
 
 <section id="home" class="screen on">
-  <div class="top"><div class="branch" id="branchName"></div><div class="topRight"><button class="leaveBtn" id="leaveBtn" onclick="startLeave()">📝 ຂໍລາພັກ</button><div class="date" id="today"></div></div></div>
+  <div class="top"><div class="branch" id="branchName"></div><div class="topRight"><button class="leaveBtn apprBadge hidden" id="apprBadge" onclick="startApprove()">✅ ລໍອະນຸມັດ <b id="apprCount"></b></button><button class="leaveBtn" id="leaveBtn" onclick="startLeave()">📝 ຂໍລາພັກ</button><div class="date" id="today"></div></div></div>
   <div class="banner" id="banner"></div>
   <div class="clock" id="clock"></div>
   <div class="summary hidden" id="summary">
@@ -227,7 +231,7 @@
   <div class="menuBox">
     <button class="menuBtn" onclick="mgrPick('enrollId')">📷 ລົງທະບຽນໃບໜ້າ<small>Register a face</small></button>
     <button class="menuBtn" onclick="mgrPick('manualId')">✍️ ບັນທຶກເຂົ້າ/ອອກວຽກແທນ<small>Clock in or out for a staff member</small></button>
-    <button class="menuBtn" onclick="loadPending()">✅ ອະນຸມັດການລາພັກ<small>Approve leave requests</small></button>
+    <button class="menuBtn" onclick="startApprove()">✅ ອະນຸມັດການລາພັກ<small>Approve leave requests</small></button>
     <div class="menuInfo" id="mgrInfo"></div>
   </div>
 </section>
@@ -351,6 +355,7 @@ async function loadSummary(){
     + (r.clockedOut.length ? '<br>ອອກແລ້ວ: ' + namesHtml(r.clockedOut) : '');
   $('sOff').textContent = r.dayOff.length;  $('nOff').innerHTML = namesHtml(r.dayOff);
   $('sLeave').textContent = r.leave.length; $('nLeave').innerHTML = namesHtml(r.leave);
+  $('apprBadge').classList.toggle('hidden', !(r.pendingLeave > 0)); $('apprCount').textContent = r.pendingLeave || '';
   lastSummary = r;
   if ($('teams').classList.contains('on')) renderTeams();
   if (expanded) renderDetail();
@@ -477,7 +482,7 @@ function show(id){
 function resetIdle(ms){ clearTimeout(idleTimer); idleTimer = setTimeout(goHome, ms || 30000); }
 function goHome(){
   clearTimeout(idleTimer); runToken++; busy = false; mode = 'idle';
-  action = null; padState = null; managerCode = ''; lastPhoto = ''; afterResult = null; faceId = '';
+  action = null; padState = null; managerCode = ''; apprToken = ''; lastPhoto = ''; afterResult = null; faceId = '';
   stopCamera();
   $('result').className = 'screen';
   show('home');
@@ -702,7 +707,9 @@ function renderPad(){
   if (s.kind === 'pin') {
     if (s.step === 'id') { prompt = 'ໃສ່ລະຫັດພະນັກງານ'; shown = s.id; ready = s.id.length > 0; }
     else { prompt = 'ໃສ່ລະຫັດ PIN'; shown = '•'.repeat(s.pin.length); ready = s.pin.length >= 4; go = 'ຢືນຢັນ'; }
-  } else if (s.kind === 'mgr' || s.kind === 'mgrLeave') {
+  } else if (s.kind === 'apprPin') {
+    prompt = 'ໃສ່ PIN ຜູ້ອະນຸມັດ'; shown = '•'.repeat(s.value.length); ready = s.value.length >= 4; go = 'ເຂົ້າ';
+  } else if (s.kind === 'mgr') {
     prompt = 'ໃສ່ລະຫັດຜູ້ຈັດການ'; shown = '•'.repeat(s.value.length); ready = s.value.length >= 4;
   } else if (s.kind === 'faceId') {
     prompt = 'ໃສ່ລະຫັດພະນັກງານ'; shown = s.value; ready = s.value.length > 0;
@@ -731,9 +738,8 @@ function press(k){
         submit({ op: 'pin', action: action, id: s.id, pin: s.pin, photo: photo });
         return;
       }
-    } else if (s.kind === 'mgrLeave' && s.value.length >= 4) {
-      managerCode = s.value;
-      loadPending();
+    } else if (s.kind === 'apprPin' && s.value.length >= 4) {
+      apprLogin(s.value);
       return;
     } else if (s.kind === 'mgr' && s.value.length >= 4) {
       managerCode = s.value;
@@ -937,28 +943,42 @@ async function sendLeave(){
   const r = await api({ op: 'leave', token: leaveToken, type: leaveType, from: $('lvFrom').value, to: $('lvTo').value, reason: $('lvReason').value });
   busy = false;
   if (r && r.ok) {
-    result('good-mgr', 'ສົ່ງຄຳຂໍລາພັກແລ້ວ', '', r.from + ' → ' + r.to + ' · ' + r.days + ' ມື້', 'ລໍຖ້າຫົວໜ້າອະນຸມັດ');
+    result('good-mgr', 'ສົ່ງຄຳຂໍລາພັກແລ້ວ', '', r.from + ' → ' + r.to + ' · ' + r.days + ' ມື້', r.next ? 'ລໍຖ້າ ' + r.next + ' ອະນຸມັດ' : 'ລໍຖ້າອະນຸມັດ');
     resetIdle(7000);
   } else showError(r);
 }
 
-// ---------------- leave approval (manager code) ----------------
+// ---------------- leave approval (each approver has an approval PIN) ----------------
+let apprToken = '', apprName = '', apprRole = '';
 function startApprove(){
+  if (busy) return;
+  collapseDetail();
   runToken++; stopCamera();
   mode = 'mgr';
-  padState = { kind: 'mgrLeave', value: '' };
+  padState = { kind: 'apprPin', value: '' };
   $('padTitle').textContent = 'ອະນຸມັດການລາພັກ';
   $('padTitle').className = 'mgr';
-  $('hint').textContent = '';
+  $('hint').textContent = 'ຫົວໜ້າທີມ · ຜູ້ຈັດການ · ຜູ້ຈັດການທົ່ວໄປ';
   show('pad'); renderPad(); resetIdle();
+}
+async function apprLogin(pin){
+  if (busy) return; busy = true;
+  clearTimeout(idleTimer);
+  result('busy', 'ກຳລັງກວດສອບ…', '', '');
+  const r = await api({ op: 'apprLogin', pin: pin });
+  busy = false;
+  if (!r || !r.ok) { showError(r); return; }
+  apprToken = r.token; apprName = r.name; apprRole = r.roleLao || r.role;
+  loadPending();
 }
 let pendingList = [];
 async function loadPending(){
   if (busy) return; busy = true;
   clearTimeout(idleTimer);
   result('busy', 'ກຳລັງໂຫຼດ…', '', '');
-  const r = await api({ op: 'pendingLeave', manager: managerCode });
+  const r = await api({ op: 'pendingLeave', token: apprToken });
   busy = false;
+  if (r && r.code === 'login') { startApprove(); $('hint').textContent = 'ໝົດເວລາ ກະລຸນາໃສ່ PIN ໃໝ່'; return; }
   if (!r || !r.ok) { showError(r); return; }
   mode = 'mgr'; padState = null;
   pendingList = r.list || [];
@@ -968,12 +988,11 @@ async function loadPending(){
 const TYPE_LAO = { 'Annual leave': 'ລາພັກປະຈຳປີ', 'Sick leave': 'ລາປ່ວຍ', 'Personal leave': 'ລາກິດ', 'Unpaid leave': 'ລາບໍ່ໄດ້ເງິນເດືອນ', 'Other': 'ອື່ນໆ' };
 function dmy(s){ const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? m[3] + '/' + m[2] + '/' + m[1] : s; }
 function renderPending(){
-  const left = pendingList.filter(p => !p.done).length;
-  $('apprTitle').textContent = 'ລໍຖ້າອະນຸມັດ (' + left + ')';
+  const left = pendingList.filter(p => !p.done && p.mine).length;
+  $('apprTitle').textContent = apprName + ' · ລໍຖ້າທ່ານ (' + left + ')';
   const box = $('apprList'); box.innerHTML = '';
-  if (!pendingList.length) { box.innerHTML = '<div class="apprEmpty">ບໍ່ມີຄຳຂໍລາພັກທີ່ລໍຖ້າ ✓</div>'; return; }
-  const mine = p => p.branch === BRANCH ? 0 : 1;
-  pendingList.slice().sort((a, b) => mine(a) - mine(b)).forEach(p => {
+  if (!pendingList.length) { box.innerHTML = '<div class="apprEmpty">ບໍ່ມີຄຳຂໍລາພັກທີ່ລໍຖ້າທ່ານ ✓</div>'; return; }
+  pendingList.forEach(p => {
     const c = document.createElement('div'); c.className = 'apprCard' + (p.done ? ' done' : '');
     const info = document.createElement('div'); info.className = 'info';
     const add = (cls, txt) => { const d = document.createElement('div'); d.className = cls; d.textContent = txt; info.appendChild(d); return d; };
@@ -981,12 +1000,16 @@ function renderPending(){
     add('meta', [p.team, p.branch, p.at ? 'ຂໍເມື່ອ ' + p.at : ''].filter(Boolean).join(' · '));
     add('dt', (TYPE_LAO[p.type] || p.type) + ' · ' + dmy(p.from) + (p.to && p.to !== p.from ? ' → ' + dmy(p.to) : '') + (p.days ? ' · ' + p.days + ' ມື້' : ''));
     if (p.note) add('note', 'ເຫດຜົນ: ' + p.note);
+    if (p.log) add('log', p.log);
+    if (!p.mine && !p.done) add('wait', 'ຍັງລໍ ' + p.waiting + ' (' + p.waitingRole + ') · ກົດອະນຸມັດເພື່ອຂ້າມຂັ້ນ');
     c.appendChild(info);
     const acts = document.createElement('div'); acts.className = 'acts';
     if (p.done) {
-      const d = document.createElement('div'); d.className = 'dt'; d.textContent = p.done === 'Yes' ? '✓ ອະນຸມັດແລ້ວ' : '✕ ບໍ່ອະນຸມັດ'; acts.appendChild(d);
+      const d = document.createElement('div'); d.className = 'fwd';
+      d.textContent = p.done === 'No' ? '✕ ບໍ່ອະນຸມັດ' : (p.next ? '✓ ສົ່ງຕໍ່ໃຫ້ ' + p.next : '✓ ອະນຸມັດສຳເລັດ');
+      acts.appendChild(d);
     } else {
-      const y = document.createElement('button'); y.className = 'yes'; y.textContent = 'ອະນຸມັດ'; y.onclick = () => decide(p, 'Yes');
+      const y = document.createElement('button'); y.className = 'yes'; y.textContent = p.mine ? 'ອະນຸມັດ' : 'ອະນຸມັດເລີຍ'; y.onclick = () => decide(p, 'Yes');
       const n = document.createElement('button'); n.className = 'no'; n.textContent = 'ບໍ່ອະນຸມັດ'; n.onclick = () => decide(p, 'No');
       acts.appendChild(y); acts.appendChild(n);
     }
@@ -997,10 +1020,11 @@ function renderPending(){
 async function decide(p, decision){
   if (busy || p.done) return; busy = true;
   resetIdle(180000);
-  const r = await api({ op: 'decideLeave', manager: managerCode, row: p.row, id: p.id, decision: decision });
+  const r = await api({ op: 'decideLeave', token: apprToken, row: p.row, id: p.id, decision: decision });
   busy = false;
-  if (r && r.ok) { p.done = decision; renderPending(); setTimeout(loadSummary, 1500); return; }
-  if (r && (r.code === 'gone' || r.code === 'decided')) { p.done = r.status || 'No'; renderPending(); return; }
+  if (r && r.ok) { p.done = decision; p.next = r.next || ''; renderPending(); setTimeout(loadSummary, 1500); return; }
+  if (r && r.code === 'login') { startApprove(); $('hint').textContent = 'ໝົດເວລາ ກະລຸນາໃສ່ PIN ໃໝ່'; return; }
+  if (r && (r.code === 'decided' || r.code === 'notyours')) { loadPending(); return; }
   showError(r); afterResult = () => { renderPending(); show('approve'); resetIdle(180000); };
 }
 
@@ -1045,6 +1069,7 @@ function showError(r){
     notfound: ['ບໍ່ພົບລະຫັດພະນັກງານນີ້', 'ກວດລະຫັດແລ້ວລອງໃໝ່'],
     badpin:   ['ລະຫັດ PIN ບໍ່ຖືກຕ້ອງ', r && r.left > 0 ? 'ລອງໄດ້ອີກ ' + r.left + ' ເທື່ອ' : 'ລໍ 5 ນາທີ ຫຼື ແຈ້ງຫົວໜ້າ'],
     badmgr:   ['ລະຫັດຜູ້ຈັດການບໍ່ຖືກຕ້ອງ', ''],
+    badappr:  ['PIN ຜູ້ອະນຸມັດບໍ່ຖືກຕ້ອງ', 'ກວດ PIN ແລ້ວລອງໃໝ່'],
     locked:   ['ໃສ່ລະຫັດຜິດຫຼາຍເທື່ອ', 'ລໍ 5 ນາທີ ຫຼື ແຈ້ງຫົວໜ້າ'],
     already:  [(r && r.name ? r.name + ' ' : '') + 'ເຂົ້າວຽກແລ້ວ', 'ເຂົ້າວຽກເວລາ ' + (r && r.time) + '. ຖ້າຈະອອກ ໃຫ້ກົດ ອອກວຽກ'],
     notin:    [(r && r.name ? r.name + ' ' : '') + 'ຍັງບໍ່ໄດ້ເຂົ້າວຽກ', 'ໃຫ້ກົດ ເຂົ້າວຽກ ກ່ອນ'],
