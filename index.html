@@ -134,6 +134,23 @@
   .pill{border-radius:999px;padding:14px 26px;font-size:20px;font-weight:600;background:#fff;box-shadow:0 2px 0 rgba(20,48,42,.18)}
   .pill.dark{background:var(--ink);color:#fff}
   .hidden{display:none !important}
+  /* leave approval */
+  #approve{gap:12px}
+  .apprList{width:min(820px,100%);margin:0 auto;flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:12px;padding-bottom:12px}
+  .apprCard{background:#fff;border-radius:18px;padding:16px 18px;box-shadow:0 2px 0 rgba(20,48,42,.12);display:flex;gap:16px;align-items:center}
+  .apprCard .info{flex:1;min-width:0}
+  .apprCard .nm{font-size:22px;font-weight:700}
+  .apprCard .nm span{font-weight:500;color:var(--muted);font-size:17px}
+  .apprCard .meta{font-size:16px;color:var(--muted);margin-top:2px}
+  .apprCard .dt{font-size:19px;font-weight:600;margin-top:6px}
+  .apprCard .note{font-size:16px;margin-top:4px}
+  .apprCard .acts{display:flex;flex-direction:column;gap:8px}
+  .apprCard .acts button{border-radius:14px;padding:12px 18px;font-size:19px;font-weight:700;min-width:150px}
+  .apprCard .yes{background:var(--in);color:#fff}
+  .apprCard .no{background:#fff;color:var(--err);box-shadow:inset 0 0 0 2px var(--err)}
+  .apprCard.done{opacity:.55}
+  .apprEmpty{text-align:center;font-size:22px;color:var(--muted);margin-top:40px}
+  .apprBtn{color:var(--in);font-weight:700}
 
   /* keypad */
   #pad{align-items:center}
@@ -210,6 +227,7 @@
   <div class="menuBox">
     <button class="menuBtn" onclick="mgrPick('enrollId')">📷 ລົງທະບຽນໃບໜ້າ<small>Register a face</small></button>
     <button class="menuBtn" onclick="mgrPick('manualId')">✍️ ບັນທຶກເຂົ້າ/ອອກວຽກແທນ<small>Clock in or out for a staff member</small></button>
+    <button class="menuBtn" onclick="loadPending()">✅ ອະນຸມັດການລາພັກ<small>Approve leave requests</small></button>
     <div class="menuInfo" id="mgrInfo"></div>
   </div>
 </section>
@@ -241,8 +259,13 @@
   </div>
 </section>
 
+<section id="approve" class="screen">
+  <div class="bar"><h1 class="mgr" id="apprTitle">ລໍຖ້າອະນຸມັດ</h1><div><button class="ghost" onclick="loadPending()">ໂຫຼດໃໝ່</button><button class="ghost" onclick="goHome()">ອອກ</button></div></div>
+  <div class="apprList" id="apprList"></div>
+</section>
+
 <section id="pad" class="screen">
-  <div class="bar"><h1 id="padTitle"></h1><button class="ghost" onclick="goHome()">ຍົກເລີກ</button></div>
+  <div class="bar"><h1 id="padTitle"></h1><div><button class="ghost apprBtn hidden" id="padApprove" onclick="startApprove()">✅ ອະນຸມັດການລາ</button><button class="ghost" onclick="goHome()">ຍົກເລີກ</button></div></div>
   <div class="padBox">
     <div class="prompt" id="prompt"></div>
     <div class="display" id="display"></div>
@@ -679,13 +702,14 @@ function renderPad(){
   if (s.kind === 'pin') {
     if (s.step === 'id') { prompt = 'ໃສ່ລະຫັດພະນັກງານ'; shown = s.id; ready = s.id.length > 0; }
     else { prompt = 'ໃສ່ລະຫັດ PIN'; shown = '•'.repeat(s.pin.length); ready = s.pin.length >= 4; go = 'ຢືນຢັນ'; }
-  } else if (s.kind === 'mgr') {
+  } else if (s.kind === 'mgr' || s.kind === 'mgrLeave') {
     prompt = 'ໃສ່ລະຫັດຜູ້ຈັດການ'; shown = '•'.repeat(s.value.length); ready = s.value.length >= 4;
   } else if (s.kind === 'faceId') {
     prompt = 'ໃສ່ລະຫັດພະນັກງານ'; shown = s.value; ready = s.value.length > 0;
   } else if (s.kind === 'enrollId' || s.kind === 'manualId') {
     prompt = s.kind === 'enrollId' ? 'ລະຫັດພະນັກງານທີ່ຈະລົງທະບຽນໜ້າ' : 'ລະຫັດພະນັກງານ'; shown = s.value; ready = s.value.length > 0;
   }
+  $('padApprove').classList.toggle('hidden', !(action === 'Leave' && (s.kind === 'faceId' || s.kind === 'pin')));
   $('prompt').textContent = prompt; $('display').textContent = shown;
   $('goKey').textContent = go; $('goKey').disabled = !ready;
 }
@@ -707,6 +731,10 @@ function press(k){
         submit({ op: 'pin', action: action, id: s.id, pin: s.pin, photo: photo });
         return;
       }
+    } else if (s.kind === 'mgrLeave' && s.value.length >= 4) {
+      managerCode = s.value;
+      loadPending();
+      return;
     } else if (s.kind === 'mgr' && s.value.length >= 4) {
       managerCode = s.value;
       checkManager();
@@ -912,6 +940,68 @@ async function sendLeave(){
     result('good-mgr', 'ສົ່ງຄຳຂໍລາພັກແລ້ວ', '', r.from + ' → ' + r.to + ' · ' + r.days + ' ມື້', 'ລໍຖ້າຫົວໜ້າອະນຸມັດ');
     resetIdle(7000);
   } else showError(r);
+}
+
+// ---------------- leave approval (manager code) ----------------
+function startApprove(){
+  runToken++; stopCamera();
+  mode = 'mgr';
+  padState = { kind: 'mgrLeave', value: '' };
+  $('padTitle').textContent = 'ອະນຸມັດການລາພັກ';
+  $('padTitle').className = 'mgr';
+  $('hint').textContent = '';
+  show('pad'); renderPad(); resetIdle();
+}
+let pendingList = [];
+async function loadPending(){
+  if (busy) return; busy = true;
+  clearTimeout(idleTimer);
+  result('busy', 'ກຳລັງໂຫຼດ…', '', '');
+  const r = await api({ op: 'pendingLeave', manager: managerCode });
+  busy = false;
+  if (!r || !r.ok) { showError(r); return; }
+  mode = 'mgr'; padState = null;
+  pendingList = r.list || [];
+  renderPending();
+  show('approve'); resetIdle(180000);
+}
+const TYPE_LAO = { 'Annual leave': 'ລາພັກປະຈຳປີ', 'Sick leave': 'ລາປ່ວຍ', 'Personal leave': 'ລາກິດ', 'Unpaid leave': 'ລາບໍ່ໄດ້ເງິນເດືອນ', 'Other': 'ອື່ນໆ' };
+function dmy(s){ const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? m[3] + '/' + m[2] + '/' + m[1] : s; }
+function renderPending(){
+  const left = pendingList.filter(p => !p.done).length;
+  $('apprTitle').textContent = 'ລໍຖ້າອະນຸມັດ (' + left + ')';
+  const box = $('apprList'); box.innerHTML = '';
+  if (!pendingList.length) { box.innerHTML = '<div class="apprEmpty">ບໍ່ມີຄຳຂໍລາພັກທີ່ລໍຖ້າ ✓</div>'; return; }
+  const mine = p => p.branch === BRANCH ? 0 : 1;
+  pendingList.slice().sort((a, b) => mine(a) - mine(b)).forEach(p => {
+    const c = document.createElement('div'); c.className = 'apprCard' + (p.done ? ' done' : '');
+    const info = document.createElement('div'); info.className = 'info';
+    const add = (cls, txt) => { const d = document.createElement('div'); d.className = cls; d.textContent = txt; info.appendChild(d); return d; };
+    const nm = add('nm', p.name + ' '); const sp = document.createElement('span'); sp.textContent = '#' + p.id; nm.appendChild(sp);
+    add('meta', [p.team, p.branch, p.at ? 'ຂໍເມື່ອ ' + p.at : ''].filter(Boolean).join(' · '));
+    add('dt', (TYPE_LAO[p.type] || p.type) + ' · ' + dmy(p.from) + (p.to && p.to !== p.from ? ' → ' + dmy(p.to) : '') + (p.days ? ' · ' + p.days + ' ມື້' : ''));
+    if (p.note) add('note', 'ເຫດຜົນ: ' + p.note);
+    c.appendChild(info);
+    const acts = document.createElement('div'); acts.className = 'acts';
+    if (p.done) {
+      const d = document.createElement('div'); d.className = 'dt'; d.textContent = p.done === 'Yes' ? '✓ ອະນຸມັດແລ້ວ' : '✕ ບໍ່ອະນຸມັດ'; acts.appendChild(d);
+    } else {
+      const y = document.createElement('button'); y.className = 'yes'; y.textContent = 'ອະນຸມັດ'; y.onclick = () => decide(p, 'Yes');
+      const n = document.createElement('button'); n.className = 'no'; n.textContent = 'ບໍ່ອະນຸມັດ'; n.onclick = () => decide(p, 'No');
+      acts.appendChild(y); acts.appendChild(n);
+    }
+    c.appendChild(acts);
+    box.appendChild(c);
+  });
+}
+async function decide(p, decision){
+  if (busy || p.done) return; busy = true;
+  resetIdle(180000);
+  const r = await api({ op: 'decideLeave', manager: managerCode, row: p.row, id: p.id, decision: decision });
+  busy = false;
+  if (r && r.ok) { p.done = decision; renderPending(); setTimeout(loadSummary, 1500); return; }
+  if (r && (r.code === 'gone' || r.code === 'decided')) { p.done = r.status || 'No'; renderPending(); return; }
+  showError(r); afterResult = () => { renderPending(); show('approve'); resetIdle(180000); };
 }
 
 // ---------------- talk to the sheet ----------------
