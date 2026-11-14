@@ -159,6 +159,17 @@
   /* keypad */
   #pad{align-items:center}
   .padBox{width:min(440px,100%);margin:auto 0;display:flex;flex-direction:column;gap:14px}
+  .padRow{flex:1;min-height:0;width:100%;display:flex;gap:28px;justify-content:center;align-items:stretch}
+  .lvSide{width:min(440px,42%);margin:auto 0;max-height:100%;overflow:auto;background:#fff;border-radius:20px;padding:18px 20px;box-shadow:0 2px 0 rgba(20,48,42,.12)}
+  .lvSide h3{margin:0 0 4px;font-size:20px}
+  .lvSide .sub{font-size:15px;color:var(--muted);margin-bottom:10px}
+  .lvSide h4{margin:14px 0 6px;font-size:16px;color:var(--muted)}
+  .lvItem{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid #E3E9E5;font-size:16px}
+  .lvItem b{font-weight:700} .lvItem small{display:block;color:var(--muted);font-size:14px}
+  .lvItem .when{text-align:right;white-space:nowrap;font-weight:600}
+  .lvItem.now .when{color:#2F5F96}
+  .lvNone{color:var(--muted);font-size:16px;padding:6px 0}
+  @media (max-width:820px){ .padRow{flex-direction:column;align-items:center} .lvSide{width:min(440px,100%);margin:0;max-height:34vh} }
   .prompt{font-size:clamp(20px,3vw,26px);text-align:center}
   .display{height:76px;border-radius:14px;background:#fff;border:3px solid var(--ink);
     display:flex;align-items:center;justify-content:center;font-size:44px;font-weight:700;
@@ -270,11 +281,14 @@
 
 <section id="pad" class="screen">
   <div class="bar"><h1 id="padTitle"></h1><div><button class="ghost apprBtn hidden" id="padApprove" onclick="startApprove()">✅ ອະນຸມັດການລາ</button><button class="ghost" onclick="goHome()">ຍົກເລີກ</button></div></div>
+  <div class="padRow">
   <div class="padBox">
     <div class="prompt" id="prompt"></div>
     <div class="display" id="display"></div>
     <div class="hint" id="hint"></div>
     <div class="keys" id="keys"></div>
+  </div>
+  <div class="lvSide hidden" id="lvSide"></div>
   </div>
 </section>
 
@@ -716,7 +730,9 @@ function renderPad(){
   } else if (s.kind === 'enrollId' || s.kind === 'manualId') {
     prompt = s.kind === 'enrollId' ? 'ລະຫັດພະນັກງານທີ່ຈະລົງທະບຽນໜ້າ' : 'ລະຫັດພະນັກງານ'; shown = s.value; ready = s.value.length > 0;
   }
-  $('padApprove').classList.toggle('hidden', !(action === 'Leave' && (s.kind === 'faceId' || s.kind === 'pin')));
+  const showLv = action === 'Leave' && (s.kind === 'faceId' || s.kind === 'pin');
+  $('padApprove').classList.toggle('hidden', !showLv);
+  if (showLv !== !$('lvSide').classList.contains('hidden')) { $('lvSide').classList.toggle('hidden', !showLv); if (showLv) renderUpcoming(); }
   $('prompt').textContent = prompt; $('display').textContent = shown;
   $('goKey').textContent = go; $('goKey').disabled = !ready;
 }
@@ -903,7 +919,20 @@ function startLeave(){
   if (mode !== 'idle') return;
   if (!KEY) { showError({ code: 'badkey' }); return; }
   startFace('Leave');
+  renderUpcoming(); loadSummary().then(() => { if (!$('lvSide').classList.contains('hidden')) renderUpcoming(); });
 }
+// approved leave, now and coming up, for this branch (shown beside the leave keypad)
+function renderUpcoming(){
+  const list = (lastSummary && lastSummary.upcoming) || [];
+  const dm = s => { const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? m[3] + '/' + m[2] : s; };
+  const item = p => '<div class="lvItem' + (p.now ? ' now' : '') + '"><div><b>' + esc(p.name) + '</b> <span style="color:var(--muted)">#' + esc(p.id) + '</span><small>' +
+    esc([p.team, LEAVE_LAO[p.type] || p.type].filter(Boolean).join(' · ')) + '</small></div><div class="when">' + dm(p.from) + (p.to !== p.from ? ' → ' + dm(p.to) : '') + '<small>' + p.days + ' ມື້</small></div></div>';
+  const now = list.filter(p => p.now), later = list.filter(p => !p.now);
+  $('lvSide').innerHTML = '<h3>ການລາພັກທີ່ອະນຸມັດແລ້ວ</h3><div class="sub">' + esc(BRANCH) + '</div>' +
+    '<h4>ກຳລັງລາພັກຢູ່ (' + now.length + ')</h4>' + (now.length ? now.map(item).join('') : '<div class="lvNone">ບໍ່ມີ</div>') +
+    '<h4>ກຳລັງຈະລາພັກ (' + later.length + ')</h4>' + (later.length ? later.map(item).join('') : '<div class="lvNone">ບໍ່ມີ</div>');
+}
+const LEAVE_LAO = { 'Annual leave': 'ລາພັກປະຈຳປີ', 'Sick leave': 'ລາປ່ວຍ', 'Personal leave': 'ລາກິດ', 'Unpaid leave': 'ລາບໍ່ໄດ້ເງິນເດືອນ', 'Other': 'ອື່ນໆ' };
 async function identify(body){
   if (busy) return; busy = true;
   clearTimeout(idleTimer);
