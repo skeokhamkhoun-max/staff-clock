@@ -153,6 +153,7 @@
   .apprBtn{color:var(--in);font-weight:700}
   #urgentForm{gap:14px}
   .ugInput{width:100%;font-family:inherit;font-size:24px;padding:12px 14px;border-radius:12px;border:2px solid #C9D4CE;background:#fff;color:var(--ink)}
+  .ugTimeRow{display:flex;gap:10px;align-items:center} .ugTimeRow .ugInput{flex:1} .ugTimeRow .pill{white-space:nowrap}
   .ugWho{margin-top:6px;font-size:19px;font-weight:600;min-height:26px;color:var(--in)} .ugWho.bad{color:var(--err)}
   .apprBadge{color:var(--in);margin-right:8px} .apprBadge b{background:var(--in);color:#fff;border-radius:999px;padding:1px 9px;margin-left:4px}
   .apprCard .log{font-size:15px;color:var(--in);margin-top:4px}
@@ -286,6 +287,8 @@
       <div><div class="fLabel">ຈາກວັນທີ</div><input type="date" id="ugFrom"></div>
       <div><div class="fLabel">ຫາວັນທີ</div><input type="date" id="ugTo"></div>
     </div>
+    <div><div class="fLabel">ເລີ່ມລາເວລາ <small style="font-weight:400">(ວ່າງໄວ້ = ລາທັງມື້)</small></div>
+      <div class="ugTimeRow"><input type="time" id="ugTime" class="ugInput"><button class="pill" onclick="ugNow()">ຕອນນີ້</button><button class="pill" onclick="$('ugTime').value=''; checkUrgent()">ທັງມື້</button></div></div>
     <div class="daysInfo" id="ugDays"></div>
     <div><div class="fLabel">ເຫດຜົນ / ລາຍລະອຽດ</div><textarea id="ugReason" maxlength="200"></textarea></div>
     <button class="sendBtn" id="ugSend" onclick="sendUrgent()">ບັນທຶກ</button>
@@ -944,7 +947,7 @@ function renderUpcoming(){
   const list = (lastSummary && lastSummary.upcoming) || [];
   const dm = s => { const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? m[3] + '/' + m[2] : s; };
   const item = p => '<div class="lvItem' + (p.now ? ' now' : '') + '"><div><b>' + esc(p.name) + '</b> <span style="color:var(--muted)">#' + esc(p.id) + '</span><small>' +
-    esc([p.team, LEAVE_LAO[p.type] || p.type].filter(Boolean).join(' · ')) + '</small></div><div class="when">' + dm(p.from) + (p.to !== p.from ? ' → ' + dm(p.to) : '') + '<small>' + p.days + ' ມື້</small></div></div>';
+    esc([p.team, LEAVE_LAO[p.type] || p.type].filter(Boolean).join(' · ')) + '</small></div><div class="when">' + dm(p.from) + (p.to !== p.from ? ' → ' + dm(p.to) : '') + '<small>' + p.days + ' ມື້' + (p.time ? ' · ເລີ່ມ ' + p.time : '') + '</small></div></div>';
   const now = list.filter(p => p.now), later = list.filter(p => !p.now);
   $('lvSide').innerHTML = '<h3>ການລາພັກທີ່ອະນຸມັດແລ້ວ</h3><div class="sub">' + esc(BRANCH) + '</div>' +
     '<h4>ກຳລັງລາພັກຢູ່ (' + now.length + ')</h4>' + (now.length ? now.map(item).join('') : '<div class="lvNone">ບໍ່ມີ</div>') +
@@ -1045,7 +1048,7 @@ function renderPending(){
     const add = (cls, txt) => { const d = document.createElement('div'); d.className = cls; d.textContent = txt; info.appendChild(d); return d; };
     const nm = add('nm', p.name + ' '); const sp = document.createElement('span'); sp.textContent = '#' + p.id; nm.appendChild(sp);
     add('meta', [p.team, p.branch, p.at ? 'ຂໍເມື່ອ ' + p.at : ''].filter(Boolean).join(' · '));
-    add('dt', (TYPE_LAO[p.type] || p.type) + ' · ' + dmy(p.from) + (p.to && p.to !== p.from ? ' → ' + dmy(p.to) : '') + (p.days ? ' · ' + p.days + ' ມື້' : ''));
+    add('dt', (TYPE_LAO[p.type] || p.type) + ' · ' + dmy(p.from) + (p.to && p.to !== p.from ? ' → ' + dmy(p.to) : '') + (p.days ? ' · ' + p.days + ' ມື້' : '') + (p.time ? ' · ເລີ່ມ ' + p.time : ''));
     if (p.note) add('note', 'ເຫດຜົນ: ' + p.note);
     if (p.log) add('log', p.log);
     if (!p.mine && !p.done) add('wait', 'ຍັງລໍ ' + p.waiting + ' (' + p.waitingRole + ') · ກົດອະນຸມັດເພື່ອຂ້າມຂັ້ນ');
@@ -1081,7 +1084,7 @@ let ugType = 'Emergency leave', ugPerson = null, ugTimer = null;
 function openUrgent(){
   if (busy) return;
   ugPerson = null; ugType = 'Emergency leave';
-  $('ugId').value = ''; $('ugWho').textContent = ''; $('ugWho').className = 'ugWho'; $('ugReason').value = '';
+  $('ugId').value = ''; $('ugWho').textContent = ''; $('ugWho').className = 'ugWho'; $('ugReason').value = ''; $('ugTime').value = '';
   const box = $('ugTypes'); box.innerHTML = '';
   UG_TYPES.forEach(([val, lbl]) => {
     const b = document.createElement('button'); b.textContent = lbl; b.classList.toggle('sel', val === ugType);
@@ -1090,6 +1093,7 @@ function openUrgent(){
   });
   const now = new Date(), min = new Date(now.getTime() - 31 * 86400000), max = new Date(now.getTime() + 365 * 86400000);
   ['ugFrom','ugTo'].forEach(k => { $(k).min = ymd(min); $(k).max = ymd(max); $(k).value = ymd(now); $(k).onchange = checkUrgent; });
+  $('ugTime').onchange = checkUrgent; $('ugTime').oninput = checkUrgent;
   const instant = apprRoleEn === 'General manager' || apprRoleEn === 'Owner';
   $('ugSend').textContent = instant ? 'ບັນທຶກ ແລະ ອະນຸມັດທັນທີ' : 'ບັນທຶກ ແລະ ສົ່ງຕໍ່ໃຫ້ຂັ້ນຕໍ່ໄປ';
   show('urgentForm'); checkUrgent(); resetIdle(180000);
@@ -1111,24 +1115,26 @@ $('ugId').addEventListener('input', () => {
     checkUrgent();
   }, 450);
 });
+function ugNow(){ const d = new Date(); $('ugTime').value = pad2(d.getHours()) + ':' + pad2(d.getMinutes()); checkUrgent(); }
 function checkUrgent(){
   resetIdle(180000);
   const f = $('ugFrom').value, t = $('ugTo').value;
   if (f && t && t < f) $('ugTo').value = f;
   const tt = $('ugTo').value;
   const days = f && tt ? Math.round((new Date(tt) - new Date(f)) / 86400000) + 1 : 0;
-  $('ugDays').textContent = days > 0 ? 'ລວມ ' + days + ' ມື້' : '';
+  const tm = $('ugTime').value;
+  $('ugDays').textContent = days > 0 ? 'ລວມ ' + days + ' ມື້' + (tm ? ' · ເລີ່ມລາເວລາ ' + tm + ' ຂອງວັນທີ ' + dmy(f) : ' · ລາທັງມື້') : '';
   $('ugSend').disabled = !ugPerson || !ugType || days < 1;
 }
 async function sendUrgent(){
   if (busy || $('ugSend').disabled) return; busy = true;
   clearTimeout(idleTimer);
   result('busy', 'ກຳລັງບັນທຶກ…', '', '');
-  const r = await api({ op: 'urgentLeave', token: apprToken, id: ugPerson.id, type: ugType, from: $('ugFrom').value, to: $('ugTo').value, reason: $('ugReason').value });
+  const r = await api({ op: 'urgentLeave', token: apprToken, id: ugPerson.id, type: ugType, from: $('ugFrom').value, to: $('ugTo').value, reason: $('ugReason').value, time: $('ugTime').value });
   busy = false;
   if (r && r.ok) {
-    result('good-mgr', 'ບັນທຶກລາພັກດ່ວນແລ້ວ', '', r.name + ' · ' + dmy(r.from) + (r.to !== r.from ? ' → ' + dmy(r.to) : '') + ' · ' + r.days + ' ມື້',
-      r.final ? '✓ ອະນຸມັດແລ້ວ' : 'ສົ່ງຕໍ່ໃຫ້ ' + r.next + ' ອະນຸມັດ');
+    result('good-mgr', 'ບັນທຶກລາພັກດ່ວນແລ້ວ', '', r.name + ' · ' + dmy(r.from) + (r.time ? ' ' + r.time : '') + (r.to !== r.from ? ' → ' + dmy(r.to) : '') + ' · ' + r.days + ' ມື້',
+      (r.final ? '✓ ອະນຸມັດແລ້ວ' : 'ສົ່ງຕໍ່ໃຫ້ ' + r.next + ' ອະນຸມັດ') + (r.clockedOut ? ' · ບັນທຶກອອກວຽກ ' + r.clockedOut : ''));
     afterResult = () => loadPending(); resetIdle(20000);
     setTimeout(loadSummary, 1500);
     return;
@@ -1179,6 +1185,7 @@ function showError(r){
     badpin:   ['ລະຫັດ PIN ບໍ່ຖືກຕ້ອງ', r && r.left > 0 ? 'ລອງໄດ້ອີກ ' + r.left + ' ເທື່ອ' : 'ລໍ 5 ນາທີ ຫຼື ແຈ້ງຫົວໜ້າ'],
     badmgr:   ['ລະຫັດຜູ້ຈັດການບໍ່ຖືກຕ້ອງ', ''],
     badappr:  ['PIN ຜູ້ອະນຸມັດບໍ່ຖືກຕ້ອງ', 'ກວດ PIN ແລ້ວລອງໃໝ່'],
+    badtime:  ['ເວລາບໍ່ຖືກຕ້ອງ', 'ເລືອກເວລາໃໝ່ ຫຼື ວ່າງໄວ້ສຳລັບທັງມື້'],
     notyours: ['ທ່ານບໍ່ໄດ້ເປັນຜູ້ອະນຸມັດຂອງພະນັກງານຄົນນີ້', 'ໃຫ້ຜູ້ຈັດການທົ່ວໄປ ຫຼື ເຈົ້າຂອງ ບັນທຶກແທນ'],
     locked:   ['ໃສ່ລະຫັດຜິດຫຼາຍເທື່ອ', 'ລໍ 5 ນາທີ ຫຼື ແຈ້ງຫົວໜ້າ'],
     already:  [(r && r.name ? r.name + ' ' : '') + 'ເຂົ້າວຽກແລ້ວ', 'ເຂົ້າວຽກເວລາ ' + (r && r.time) + '. ຖ້າຈະອອກ ໃຫ້ກົດ ອອກວຽກ'],
