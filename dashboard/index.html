@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Champasak Sunset Cruise – Booking Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+:root{--bg:#f4f7fa;--card:#fff;--tx:#10222e;--mu:#5b6f7d;--bd:#d9e2e9;--ac:#0e7490;--ok:#15803d;--bad:#dc2626;--wait:#b45309}
+@media (prefers-color-scheme:dark){:root{--bg:#0c1820;--card:#13232e;--tx:#e8f1f6;--mu:#93a9b7;--bd:#23394a;--ac:#38bdf8;--ok:#4ade80;--bad:#f87171;--wait:#fbbf24}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"Noto Sans Lao","Noto Sans Lao UI","Leelawadee UI",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:16px}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:14px 16px 6px}
+h1{font-size:1.35rem;margin:0}
+.sub{color:var(--mu);font-size:.85rem}
+.live{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--ok);margin-right:6px;animation:p 2s infinite}
+.live.off{background:var(--bad);animation:none}
+@keyframes p{50%{opacity:.3}}
+button{font:inherit;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:8px;padding:6px 12px;cursor:pointer}
+main{padding:8px 16px 24px;max-width:1200px;margin:auto}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:10px 0 16px}
+.tile{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px 16px}
+.tile span{display:block;color:var(--mu);font-size:.85rem}
+.tile b{display:block;font-size:2.2rem;line-height:1.15;margin-top:2px}
+.tile small{color:var(--mu)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px 16px;margin-bottom:16px}
+h2{font-size:1.05rem;margin:0 0 10px}
+.prog{display:flex;height:16px;border-radius:8px;overflow:hidden;background:var(--bd);margin:6px 0}
+.prog i{display:block}
+.leg{display:flex;gap:16px;flex-wrap:wrap;font-size:.9rem;color:var(--mu)}
+.leg b{color:var(--tx)}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.95rem}
+th,td{padding:9px 8px;border-bottom:1px solid var(--bd);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--mu);font-weight:600;font-size:.82rem}
+tr.today td{background:rgba(14,116,144,.12);font-weight:600}
+tfoot td{font-weight:700;border-top:2px solid var(--bd)}
+.empty{color:var(--mu);padding:12px 0}
+</style>
+</head>
+<body>
+<header>
+ <div><h1 id="ti"></h1><div class="sub"><span class="live" id="dot"></span><span id="upd"></span></div></div>
+ <div style="display:flex;gap:8px;align-items:center"><span class="sub" id="clock"></span><button id="lang">EN</button></div>
+</header>
+<main>
+ <div class="tiles" id="tiles"></div>
+ <div class="card"><h2 id="ckT"></h2><div class="prog" id="prog"></div><div class="leg" id="leg"></div></div>
+ <div class="card"><h2 id="upT"></h2><div class="tw"><table id="tbl"></table></div></div>
+ <div class="sub" id="note"></div>
+</main>
+<script>
+var CONFIG={
+ supabaseUrl:"https://vcjzwlvduijeprvpzadb.supabase.co",
+ supabaseKey:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjanp3bHZkdWlqZXBydnB6YWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM2MTEzNTcsImV4cCI6MjEwOTE4NzM1N30.ogJ6nhAdaipA6SKQnxA0dpbTeQPz7gD4WhrWH3riyZs"
+};
+var T={
+ lo:{ti:"ແຜງສະຫຼຸບການຈອງ – Champasak Sunset Cruise",
+  today:"ມື້ນີ້",tmr:"ມື້ອື່ນ",wk:"7 ມື້ຂ້າງໜ້າ",all:"ທັງໝົດທີ່ຈະມາເຖິງ",bk:"ການຈອງ",pp:"ຄົນ",ckT:"ການມາເຖິງມື້ນີ້",arr:"ມາແລ້ວ",wait:"ລໍຖ້າ",mis:"ບໍ່ມາ",
+  upT:"ການຈອງຕາມມື້ (ມື້ນີ້ເປັນຕົ້ນໄປ)",date:"ວັນທີ",A:"ເຊັດ A",B:"ເຊັດ B",F:"ບຸບເຟ່",X:"ບໍ່ມີອາຫານ",V:"VIP",none:"ຍັງບໍ່ມີການຈອງ.",tot:"ລວມ",
+  upd:"ອັບເດດລ່າສຸດ",live:"ສົດ",off:"ຂາດການເຊື່ອມຕໍ່ – ກຳລັງລອງໃໝ່",note:"ຍົກເລີກແລ້ວບໍ່ນັບ. ໜ້ານີ້ສະແດງຢ່າງດຽວ ແລະ ອັບເດດເອງ."},
+ en:{ti:"Booking Dashboard – Champasak Sunset Cruise",
+  today:"Today",tmr:"Tomorrow",wk:"Next 7 days",all:"All upcoming",bk:"bookings",pp:"persons",ckT:"Today's arrivals",arr:"Arrived",wait:"Waiting",mis:"Missed",
+  upT:"Bookings by day (today onward)",date:"Date",A:"Set A",B:"Set B",F:"Buffet",X:"No food",V:"VIP",none:"No upcoming bookings.",tot:"Total",
+  upd:"Last updated",live:"Live",off:"Connection lost – retrying",note:"Cancelled bookings are not counted. This page is display only and refreshes by itself."}
+};
+var LG="lo",$=function(i){return document.getElementById(i)},sb=null,rows=[],lastOk=0,ok=true;
+try{LG=localStorage.getItem("dlang")||"lo"}catch(e){}
+function t(k){return T[LG][k]}
+function ds(d){var y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),x=String(d.getDate()).padStart(2,"0");return y+"-"+m+"-"+x}
+function add(n){var d=new Date();d.setDate(d.getDate()+n);return ds(d)}
+function lp(l){return (Number(l.qty)||0)+(Number(l.kids)||0)+(Number(l.tiny)||0)}
+function items(d){if(d.items&&d.items.length)return d.items;if(d.ticket)return [{ticket:d.ticket,menu:d.menu||"",qty:d.qty||1}];return []}
+function dl(k){try{return new Date(k+"T00:00:00").toLocaleDateString(LG==="lo"?"lo-LA":"en-GB",{weekday:"short",day:"2-digit",month:"short",year:"numeric"})}catch(e){return k}}
+function z(){return {n:0,p:0,A:0,B:0,F:0,X:0,V:0,ar:0,ms:0,ap:0}}
+function agg(){var td=ds(new Date()),days={};
+ rows.forEach(function(d){if(!d||!d.date||d.date<td||d.status==="Cancelled")return;var g=days[d.date]||(days[d.date]=z());g.n++;if(d.arrived)g.ar++;if(d.missed)g.ms++;
+  items(d).forEach(function(l){var q=lp(l),m=String(l.menu||"").charAt(0);g.p+=q;if(d.arrived)g.ap+=q;if(l.ticket==="39"){if(m==="A")g.A+=q;else if(m==="B")g.B+=q}else if(l.ticket==="25")g.F+=q;else if(l.ticket==="15")g.X+=q;else if(l.ticket==="VIP")g.V+=q})});
+ return days}
+function render(){
+ var days=agg(),keys=Object.keys(days).sort(),td=ds(new Date()),tm=add(1),w7=add(6),W=z(),AL=z();
+ keys.forEach(function(k){var g=days[k];["n","p","A","B","F","X","V","ar","ms","ap"].forEach(function(f){AL[f]+=g[f];if(k<=w7)W[f]+=g[f]})});
+ var T0=days[td]||z(),T1=days[tm]||z();
+ var tile=function(l,g){return '<div class="tile"><span>'+l+'</span><b>'+g.n+'</b><small>'+g.p+' '+t("pp")+'</small></div>'};
+ $("tiles").innerHTML=tile(t("today")+" · "+t("bk"),T0)+tile(t("tmr")+" · "+t("bk"),T1)+tile(t("wk")+" · "+t("bk"),W)+tile(t("all")+" · "+t("bk"),AL);
+ var wt=T0.n-T0.ar-T0.ms,pc=function(x){return T0.n?x/T0.n*100:0};
+ $("prog").innerHTML='<i style="width:'+pc(T0.ar)+'%;background:var(--ok)"></i><i style="width:'+pc(T0.ms)+'%;background:var(--bad)"></i>';
+ $("leg").innerHTML='<span>'+t("arr")+': <b>'+T0.ar+' / '+T0.n+'</b></span><span>'+t("wait")+': <b>'+wt+'</b></span><span>'+t("mis")+': <b>'+T0.ms+'</b></span>';
+ var row=function(l,g,c){return '<tr'+(c?' class="'+c+'"':'')+'><td>'+l+'</td>'+[g.n,g.p,g.A,g.B,g.F,g.X,g.V,g.ar+" / "+g.n].map(function(v){return '<td>'+v+'</td>'}).join("")+'</tr>'};
+ var hd='<tr><th>'+t("date")+'</th><th>'+t("bk")+'</th><th>'+t("pp")+'</th><th>'+t("A")+'</th><th>'+t("B")+'</th><th>'+t("F")+'</th><th>'+t("X")+'</th><th>'+t("V")+'</th><th>'+t("arr")+'</th></tr>';
+ $("tbl").innerHTML=keys.length?'<thead>'+hd+'</thead><tbody>'+keys.map(function(k){return row(dl(k)+(k===td?" · "+t("today"):""),days[k],k===td?"today":"")}).join("")+'</tbody><tfoot>'+row(t("tot"),AL,"")+'</tfoot>':'<tbody><tr><td class="empty">'+t("none")+'</td></tr></tbody>';
+ lang()}
+function lang(){$("ti").textContent=t("ti");document.title=t("ti");$("ckT").textContent=t("ckT");$("upT").textContent=t("upT");$("note").textContent=t("note");$("lang").textContent=LG==="lo"?"EN":"ລາວ";status()}
+function status(){$("dot").className="live"+(ok?"":" off");$("upd").textContent=ok?t("live")+" · "+t("upd")+" "+(lastOk?new Date(lastOk).toLocaleTimeString():"–"):t("off")}
+function tick(){var n=new Date();$("clock").textContent=n.toLocaleString(LG==="lo"?"lo-LA":"en-GB",{weekday:"short",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}
+async function load(){try{var r=await sb.rpc("csc_dashboard");if(r.error)throw r.error;rows=r.data||[];lastOk=Date.now();ok=true}catch(e){ok=false}render()}
+async function start(){await load();setInterval(load,15000);setInterval(function(){tick();render()},60000)}
+$("lang").onclick=function(){LG=LG==="lo"?"en":"lo";try{localStorage.setItem("dlang",LG)}catch(e){}tick();render()};
+(function(){lang();tick();setInterval(tick,30000);
+ if(!window.supabase){ok=false;status();return}
+ sb=window.supabase.createClient(CONFIG.supabaseUrl,CONFIG.supabaseKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});start()})();
+</script>
+</body>
+</html>
