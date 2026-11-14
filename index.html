@@ -433,7 +433,7 @@ $('updated').addEventListener('click', () => openTeams('all'));
 async function loadModels(){
   try {
     if (typeof faceapi === 'undefined') throw new Error('no faceapi');
-    await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
     await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
     await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
     modelsReady = true;
@@ -461,21 +461,69 @@ function goHome(){
 }
 
 // ---------------- camera ----------------
-async function startCamera(){
-  if (stream) return true;
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
-    const v = $('video'); v.srcObject = stream;
-    await v.play().catch(() => {});
-    await new Promise(r => { if (v.readyState >= 2) r(); else v.onloadeddata = () => r(); });
-    return true;
-  } catch (e) {
-    console.error(e); stream = null; return false;
+// the camera is opened once (openStream) and must be playing before any scan (startCamera)
+let camPromise = null, camGen = 0;
+const CAM_OPTS = { video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false };
+function streamLive(){ return !!stream && stream.getVideoTracks().some(t => t.readyState === 'live'); }
+function openStream(){
+  if (streamLive()) return Promise.resolve(true);
+  if (camPromise) return camPromise;
+  const gen = camGen;
+  camPromise = (async () => {
+    try {
+      const st = await navigator.mediaDevices.getUserMedia(CAM_OPTS);
+      if (gen !== camGen) { st.getTracks().forEach(t => t.stop()); return false; }
+      stream = st;
+      const v = $('video'); v.muted = true; v.setAttribute('playsinline', ''); v.srcObject = st;
+      v.play().catch(() => {});
+      return true;
+    } catch (e) { console.error(e); stream = null; return false; }
+    finally { camPromise = null; }
+  })();
+  return camPromise;
+}
+async function videoReady(v, ms){
+  const end = Date.now() + ms;
+  while (Date.now() < end) {
+    if (v.paused) { try { await v.play(); } catch (e) {} }
+    if (v.readyState >= 2 && v.videoWidth > 0) return true;
+    await sleep(100);
   }
+  return false;
+}
+async function startCamera(){
+  const v = $('video');
+  if (!(await openStream())) return false;
+  if (await videoReady(v, 5000)) return true;
+  stopCamera();                       // camera stuck: open it again once
+  if (!(await openStream())) return false;
+  return videoReady(v, 5000);
 }
 function stopCamera(){
+  camGen++;
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
   $('video').srcObject = null;
+}
+// each scan works on a still copy of the video frame, so the face reader never waits on the video
+const frame = document.createElement('canvas');
+function grabFrame(v){
+  const vw = v.videoWidth, vh = v.videoHeight;
+  if (!vw || !vh) return null;
+  const k = Math.min(1, 640 / vw), w = Math.round(vw * k), h = Math.round(vh * k);
+  if (frame.width !== w) frame.width = w;
+  if (frame.height !== h) frame.height = h;
+  frame.getContext('2d').drawImage(v, 0, 0, w, h);
+  return frame;
+}
+async function detectFull(v){
+  const f = grabFrame(v); if (!f) { await sleep(150); return null; }
+  try { return await faceapi.detectSingleFace(f, detOpts()).withFaceLandmarks().withFaceDescriptor(); }
+  catch (e) { console.error(e); await sleep(150); return null; }
+}
+async function detectMarks(v){
+  const f = grabFrame(v); if (!f) { await sleep(150); return null; }
+  try { return await faceapi.detectSingleFace(f, detOpts()).withFaceLandmarks(); }
+  catch (e) { console.error(e); await sleep(150); return null; }
 }
 function grabPhoto(){
   const v = $('video');
@@ -494,8 +542,8 @@ function yawOf(landmarks){
   const left = p[0].x, right = p[16].x, nose = p[30].x;
   return (nose - left) / (right - left) - 0.5;
 }
-function faceBigEnough(det, v){ return det.detection.box.width > v.videoWidth * 0.22; }
-const detOpts = () => new faceapi.SsdMobilenetv1Options({ minConfidence: 0.6 });
+function faceBigEnough(det){ return det.detection.box.width > frame.width * 0.18; }
+const detOpts = () => new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.4 });
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 function camText(msg, sub){ $('camMsg').textContent = msg || ''; $('camSub').textContent = sub || ''; }
@@ -514,7 +562,7 @@ async function startFace(a){
   $('padTitle').className = $('camTitle').className;
   $('hint').textContent = 'ແລ້ວສະແກນໃບໜ້າ';
   show('pad'); renderPad(); resetIdle();
-  startCamera();   // warm up the camera while the ID is typed
+  openStream();   // warm up the camera while the ID is typed
 }
 let faceId = '';
 function retryFace(){ if (action) { resetIdle(45000); runFace(); } }
@@ -537,9 +585,9 @@ async function runFace(){
   camText('ຫັນໜ້າເຂົ້າກ້ອງ ໃຫ້ໜ້າຢູ່ໃນວົງ', 'Look at the camera');
   while (Date.now() < deadline && samples.length < 3) {
     if (token !== runToken) return;
-    const det = await faceapi.detectSingleFace(v, detOpts()).withFaceLandmarks().withFaceDescriptor();
+    const det = await detectFull(v);
     if (token !== runToken) return;
-    if (det && faceBigEnough(det, v)) {
+    if (det && faceBigEnough(det)) {
       const yaw = yawOf(det.landmarks);
       if (Math.abs(yaw) < FRONT_MAX) {
         samples.push(Array.from(det.descriptor));
@@ -564,9 +612,9 @@ async function runFace(){
   const chDeadline = Math.max(deadline, Date.now() + 8000);
   while (Date.now() < chDeadline) {
     if (token !== runToken) return;
-    const det = await faceapi.detectSingleFace(v, detOpts()).withFaceLandmarks();
+    const det = await detectMarks(v);
     if (token !== runToken) return;
-    if (det && faceBigEnough(det, v) && ch.test(det.landmarks, { yaw: base, mouth: baseMouth / samples.length })) { passed = true; break; }
+    if (det && faceBigEnough(det) && ch.test(det.landmarks, { yaw: base, mouth: baseMouth / samples.length })) { passed = true; break; }
     await sleep(50);
   }
   if (!passed) return faceFail(token, 'ກວດບໍ່ຜ່ານ', ch.fail + ' ຫຼື ໃຊ້ລະຫັດ PIN');
@@ -613,7 +661,7 @@ function startPin(){
   $('padTitle').className = (action === 'In' ? 'in' : action === 'Out' ? 'out' : 'mgr');
   $('hint').textContent = action === 'Leave' ? 'ຢືນຢັນຕົວຕົນກ່ອນຂໍລາພັກ' : 'ຈະຖ່າຍຮູບໄວ້ເປັນຫຼັກຖານ';
   show('pad'); renderPad(); resetIdle();
-  startCamera();   // keep camera on so a photo is taken with the PIN
+  openStream();   // keep camera on so a photo is taken with the PIN
 }
 function startManager(){
   if (mode !== 'idle') return;
@@ -734,9 +782,9 @@ async function startEnroll(id){
   const v = $('video'); const deadline = Date.now() + 60000;
   let side = 0;
   const poses = [
-    { n: 4, msg: 'ເບິ່ງກ້ອງຊື່ໆ ແລະ ຢູ່ນິ່ງໆ', sub: 'Look straight at the camera', ok: y => Math.abs(y) < 0.06 },
-    { n: 3, msg: 'ຫັນໜ້າໄປທາງຂ້າງໜ້ອຍໜຶ່ງ', sub: 'Turn your head a little to one side', ok: y => Math.abs(y) >= 0.06 && Math.abs(y) <= 0.2 },
-    { n: 3, msg: 'ຫັນໜ້າໄປອີກຂ້າງໜ້ອຍໜຶ່ງ', sub: 'Now a little to the other side', ok: y => Math.abs(y) >= 0.06 && Math.abs(y) <= 0.2 && Math.sign(y) === -side }
+    { n: 4, msg: 'ເບິ່ງກ້ອງຊື່ໆ ແລະ ຢູ່ນິ່ງໆ', sub: 'Look straight at the camera', ok: y => Math.abs(y) < 0.08 },
+    { n: 3, msg: 'ຫັນໜ້າໄປທາງຂ້າງໜ້ອຍໜຶ່ງ', sub: 'Turn your head a little to one side', ok: y => Math.abs(y) >= 0.06 && Math.abs(y) <= 0.22 },
+    { n: 3, msg: 'ຫັນໜ້າໄປອີກຂ້າງໜ້ອຍໜຶ່ງ', sub: 'Now a little to the other side', ok: y => Math.abs(y) >= 0.06 && Math.abs(y) <= 0.22 && Math.sign(y) === -side }
   ];
   const total = poses.reduce((a, p) => a + p.n, 0);
   for (let pi = 0; pi < poses.length; pi++) {
@@ -744,9 +792,9 @@ async function startEnroll(id){
     while (got < pose.n && Date.now() < deadline) {
       if (token !== runToken) return;
       camText(pose.msg + ' · ' + enrollSamples.length + ' / ' + total, pose.sub);
-      const det = await faceapi.detectSingleFace(v, detOpts()).withFaceLandmarks().withFaceDescriptor();
+      const det = await detectFull(v);
       if (token !== runToken) return;
-      const good = det && det.detection.score >= 0.8 && det.detection.box.width > v.videoWidth * 0.25 && pose.ok(yawOf(det.landmarks));
+      const good = det && faceBigEnough(det) && pose.ok(yawOf(det.landmarks));
       if (good) {
         if (pi === 1 && !side) side = Math.sign(yawOf(det.landmarks));
         enrollSamples.push(Array.from(det.descriptor).map(x => Math.round(x * 1e4) / 1e4));
@@ -755,7 +803,7 @@ async function startEnroll(id){
         await sleep(300);
       } else {
         $('oval').classList.remove('good');
-        if (det && det.detection.box.width <= v.videoWidth * 0.25) camText('ເຂົ້າມາໃກ້ກ້ອງອີກໜ້ອຍ · ' + enrollSamples.length + ' / ' + total, 'Come a little closer');
+        if (det && !faceBigEnough(det)) camText('ເຂົ້າມາໃກ້ກ້ອງອີກໜ້ອຍ · ' + enrollSamples.length + ' / ' + total, 'Come a little closer');
         await sleep(80);
       }
     }
