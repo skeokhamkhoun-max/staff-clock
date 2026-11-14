@@ -900,7 +900,7 @@ function checkLeave(){
   const tt = $('lvTo').value;
   const days = f && tt ? Math.round((new Date(tt) - new Date(f)) / 86400000) + 1 : 0;
   $('lvDays').textContent = days > 0 ? 'ລວມ ' + days + ' ມື້' : '';
-  $('lvSend').disabled = !leaveType || days < 1 || days > 60;
+  $('lvSend').disabled = !leaveType || days < 1;
 }
 async function sendLeave(){
   if (busy || $('lvSend').disabled) return; busy = true;
@@ -965,7 +965,7 @@ function showError(r){
     badkey:   ['ເຄື່ອງນີ້ຍັງບໍ່ໄດ້ເຊື່ອມຕໍ່ລະບົບ', 'ເປີດລິ້ງທີ່ມີ key= ໃນເຄື່ອງນີ້'],
     network:  ['ເຊື່ອມຕໍ່ບໍ່ໄດ້', 'ກວດ Wi-Fi ແລ້ວລອງໃໝ່'],
     overlap:  ['ມີຄຳຂໍລາພັກໃນວັນດັ່ງກ່າວແລ້ວ', (r && r.from ? r.from + ' → ' + r.to + ' · ' : '') + (r && r.status === 'Yes' ? 'ອະນຸມັດແລ້ວ' : 'ລໍຖ້າອະນຸມັດ')],
-    baddate:  ['ວັນທີບໍ່ຖືກຕ້ອງ', 'ເລືອກວັນທີໃໝ່ (ສູງສຸດ 60 ມື້)'],
+    baddate:  ['ວັນທີບໍ່ຖືກຕ້ອງ', 'ເລືອກວັນທີໃໝ່'],
     expired:  ['ໝົດເວລາ', 'ກະລຸນາເລີ່ມຂໍລາພັກໃໝ່'],
     bad:      ['ບັນທຶກບໍ່ໄດ້', 'ລອງໃໝ່ອີກຄັ້ງ'],
     error:    ['ບັນທຶກບໍ່ໄດ້', 'ລອງໃໝ່ອີກຄັ້ງ']
