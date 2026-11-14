@@ -151,6 +151,9 @@
   .apprCard.done{opacity:.55}
   .apprEmpty{text-align:center;font-size:22px;color:var(--muted);margin-top:40px}
   .apprBtn{color:var(--in);font-weight:700}
+  #urgentForm{gap:14px}
+  .ugInput{width:100%;font-family:inherit;font-size:24px;padding:12px 14px;border-radius:12px;border:2px solid #C9D4CE;background:#fff;color:var(--ink)}
+  .ugWho{margin-top:6px;font-size:19px;font-weight:600;min-height:26px;color:var(--in)} .ugWho.bad{color:var(--err)}
   .apprBadge{color:var(--in);margin-right:8px} .apprBadge b{background:var(--in);color:#fff;border-radius:999px;padding:1px 9px;margin-left:4px}
   .apprCard .log{font-size:15px;color:var(--in);margin-top:4px}
   .apprCard .wait{font-size:15px;color:#9a5b00;margin-top:4px;font-weight:600}
@@ -274,8 +277,23 @@
   </div>
 </section>
 
+<section id="urgentForm" class="screen">
+  <div class="bar"><h1 class="mgr">ລາພັກດ່ວນ · ບັນທຶກແທນ</h1><button class="ghost" onclick="loadPending()">ກັບຄືນ</button></div>
+  <div class="formBox">
+    <div><div class="fLabel">ລະຫັດພະນັກງານ</div><input id="ugId" class="ugInput" inputmode="numeric" autocomplete="off" maxlength="8"><div class="ugWho" id="ugWho"></div></div>
+    <div><div class="fLabel">ປະເພດການລາ</div><div class="types" id="ugTypes"></div></div>
+    <div class="dates">
+      <div><div class="fLabel">ຈາກວັນທີ</div><input type="date" id="ugFrom"></div>
+      <div><div class="fLabel">ຫາວັນທີ</div><input type="date" id="ugTo"></div>
+    </div>
+    <div class="daysInfo" id="ugDays"></div>
+    <div><div class="fLabel">ເຫດຜົນ / ລາຍລະອຽດ</div><textarea id="ugReason" maxlength="200"></textarea></div>
+    <button class="sendBtn" id="ugSend" onclick="sendUrgent()">ບັນທຶກ</button>
+  </div>
+</section>
+
 <section id="approve" class="screen">
-  <div class="bar"><h1 class="mgr" id="apprTitle">ລໍຖ້າອະນຸມັດ</h1><div><button class="ghost" onclick="loadPending()">ໂຫຼດໃໝ່</button><button class="ghost" onclick="goHome()">ອອກ</button></div></div>
+  <div class="bar"><h1 class="mgr" id="apprTitle">ລໍຖ້າອະນຸມັດ</h1><div><button class="ghost apprBtn" onclick="openUrgent()">➕ ລາພັກດ່ວນ</button><button class="ghost" onclick="loadPending()">ໂຫຼດໃໝ່</button><button class="ghost" onclick="goHome()">ອອກ</button></div></div>
   <div class="apprList" id="apprList"></div>
 </section>
 
@@ -912,7 +930,7 @@ async function sendManual(){
 }
 
 // ---------------- leave request ----------------
-const LEAVE_TYPES = [['Annual leave','ລາພັກປະຈຳປີ'],['Sick leave','ລາປ່ວຍ'],['Personal leave','ລາກິດ'],['Unpaid leave','ລາບໍ່ໄດ້ເງິນເດືອນ'],['Other','ອື່ນໆ']];
+const LEAVE_TYPES = [['Annual leave','ລາພັກປະຈຳປີ'],['Sick leave','ລາປ່ວຍ'],['Emergency leave','ລາສຸກເສີນ / ອຸບັດຕິເຫດ'],['Personal leave','ລາກິດ'],['Unpaid leave','ລາບໍ່ໄດ້ເງິນເດືອນ'],['Other','ອື່ນໆ']];
 let leaveToken = '', leaveType = '';
 function ymd(d){ return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
 function startLeave(){
@@ -932,7 +950,7 @@ function renderUpcoming(){
     '<h4>ກຳລັງລາພັກຢູ່ (' + now.length + ')</h4>' + (now.length ? now.map(item).join('') : '<div class="lvNone">ບໍ່ມີ</div>') +
     '<h4>ກຳລັງຈະລາພັກ (' + later.length + ')</h4>' + (later.length ? later.map(item).join('') : '<div class="lvNone">ບໍ່ມີ</div>');
 }
-const LEAVE_LAO = { 'Annual leave': 'ລາພັກປະຈຳປີ', 'Sick leave': 'ລາປ່ວຍ', 'Personal leave': 'ລາກິດ', 'Unpaid leave': 'ລາບໍ່ໄດ້ເງິນເດືອນ', 'Other': 'ອື່ນໆ' };
+const LEAVE_LAO = { 'Annual leave': 'ລາພັກປະຈຳປີ', 'Sick leave': 'ລາປ່ວຍ', 'Emergency leave': 'ລາສຸກເສີນ / ອຸບັດຕິເຫດ', 'Personal leave': 'ລາກິດ', 'Unpaid leave': 'ລາບໍ່ໄດ້ເງິນເດືອນ', 'Other': 'ອື່ນໆ' };
 async function identify(body){
   if (busy) return; busy = true;
   clearTimeout(idleTimer);
@@ -978,7 +996,7 @@ async function sendLeave(){
 }
 
 // ---------------- leave approval (each approver has an approval PIN) ----------------
-let apprToken = '', apprName = '', apprRole = '';
+let apprToken = '', apprName = '', apprRole = '', apprRoleEn = '';
 function startApprove(){
   if (busy) return;
   collapseDetail();
@@ -997,7 +1015,7 @@ async function apprLogin(pin){
   const r = await api({ op: 'apprLogin', pin: pin });
   busy = false;
   if (!r || !r.ok) { showError(r); return; }
-  apprToken = r.token; apprName = r.name; apprRole = r.roleLao || r.role;
+  apprToken = r.token; apprName = r.name; apprRole = r.roleLao || r.role; apprRoleEn = r.role;
   loadPending();
 }
 let pendingList = [];
@@ -1014,7 +1032,7 @@ async function loadPending(){
   renderPending();
   show('approve'); resetIdle(180000);
 }
-const TYPE_LAO = { 'Annual leave': 'ລາພັກປະຈຳປີ', 'Sick leave': 'ລາປ່ວຍ', 'Personal leave': 'ລາກິດ', 'Unpaid leave': 'ລາບໍ່ໄດ້ເງິນເດືອນ', 'Other': 'ອື່ນໆ' };
+const TYPE_LAO = { 'Annual leave': 'ລາພັກປະຈຳປີ', 'Sick leave': 'ລາປ່ວຍ', 'Emergency leave': 'ລາສຸກເສີນ / ອຸບັດຕິເຫດ', 'Personal leave': 'ລາກິດ', 'Unpaid leave': 'ລາບໍ່ໄດ້ເງິນເດືອນ', 'Other': 'ອື່ນໆ' };
 function dmy(s){ const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? m[3] + '/' + m[2] + '/' + m[1] : s; }
 function renderPending(){
   const left = pendingList.filter(p => !p.done && p.mine).length;
@@ -1055,6 +1073,68 @@ async function decide(p, decision){
   if (r && r.code === 'login') { startApprove(); $('hint').textContent = 'ໝົດເວລາ ກະລຸນາໃສ່ PIN ໃໝ່'; return; }
   if (r && (r.code === 'decided' || r.code === 'notyours')) { loadPending(); return; }
   showError(r); afterResult = () => { renderPending(); show('approve'); resetIdle(180000); };
+}
+
+// ---------------- urgent leave entered by an approver ----------------
+const UG_TYPES = [['Emergency leave','ລາສຸກເສີນ / ອຸບັດຕິເຫດ'],['Sick leave','ລາປ່ວຍ'],['Personal leave','ລາກິດ'],['Unpaid leave','ລາບໍ່ໄດ້ເງິນເດືອນ'],['Annual leave','ລາພັກປະຈຳປີ'],['Other','ອື່ນໆ']];
+let ugType = 'Emergency leave', ugPerson = null, ugTimer = null;
+function openUrgent(){
+  if (busy) return;
+  ugPerson = null; ugType = 'Emergency leave';
+  $('ugId').value = ''; $('ugWho').textContent = ''; $('ugWho').className = 'ugWho'; $('ugReason').value = '';
+  const box = $('ugTypes'); box.innerHTML = '';
+  UG_TYPES.forEach(([val, lbl]) => {
+    const b = document.createElement('button'); b.textContent = lbl; b.classList.toggle('sel', val === ugType);
+    b.onclick = () => { ugType = val; box.querySelectorAll('button').forEach(x => x.classList.toggle('sel', x === b)); checkUrgent(); };
+    box.appendChild(b);
+  });
+  const now = new Date(), min = new Date(now.getTime() - 31 * 86400000), max = new Date(now.getTime() + 365 * 86400000);
+  ['ugFrom','ugTo'].forEach(k => { $(k).min = ymd(min); $(k).max = ymd(max); $(k).value = ymd(now); $(k).onchange = checkUrgent; });
+  const instant = apprRoleEn === 'General manager' || apprRoleEn === 'Owner';
+  $('ugSend').textContent = instant ? 'ບັນທຶກ ແລະ ອະນຸມັດທັນທີ' : 'ບັນທຶກ ແລະ ສົ່ງຕໍ່ໃຫ້ຂັ້ນຕໍ່ໄປ';
+  show('urgentForm'); checkUrgent(); resetIdle(180000);
+  setTimeout(() => $('ugId').focus(), 100);
+}
+$('ugId').addEventListener('input', () => {
+  resetIdle(180000);
+  $('ugId').value = $('ugId').value.replace(/\D/g, '');
+  ugPerson = null; $('ugWho').textContent = ''; checkUrgent();
+  clearTimeout(ugTimer);
+  const id = $('ugId').value;
+  if (!id) return;
+  ugTimer = setTimeout(async () => {
+    $('ugWho').className = 'ugWho'; $('ugWho').textContent = 'ກຳລັງຊອກ…';
+    const r = await api({ op: 'whois', token: apprToken, id: id });
+    if (id !== $('ugId').value) return;
+    if (r && r.ok) { ugPerson = r; $('ugWho').textContent = r.name + ' · ' + [r.team, r.branch].filter(Boolean).join(' · '); }
+    else { $('ugWho').className = 'ugWho bad'; $('ugWho').textContent = r && r.code === 'login' ? 'ໝົດເວລາ ກະລຸນາເຂົ້າໃໝ່' : 'ບໍ່ພົບລະຫັດນີ້'; }
+    checkUrgent();
+  }, 450);
+});
+function checkUrgent(){
+  resetIdle(180000);
+  const f = $('ugFrom').value, t = $('ugTo').value;
+  if (f && t && t < f) $('ugTo').value = f;
+  const tt = $('ugTo').value;
+  const days = f && tt ? Math.round((new Date(tt) - new Date(f)) / 86400000) + 1 : 0;
+  $('ugDays').textContent = days > 0 ? 'ລວມ ' + days + ' ມື້' : '';
+  $('ugSend').disabled = !ugPerson || !ugType || days < 1;
+}
+async function sendUrgent(){
+  if (busy || $('ugSend').disabled) return; busy = true;
+  clearTimeout(idleTimer);
+  result('busy', 'ກຳລັງບັນທຶກ…', '', '');
+  const r = await api({ op: 'urgentLeave', token: apprToken, id: ugPerson.id, type: ugType, from: $('ugFrom').value, to: $('ugTo').value, reason: $('ugReason').value });
+  busy = false;
+  if (r && r.ok) {
+    result('good-mgr', 'ບັນທຶກລາພັກດ່ວນແລ້ວ', '', r.name + ' · ' + dmy(r.from) + (r.to !== r.from ? ' → ' + dmy(r.to) : '') + ' · ' + r.days + ' ມື້',
+      r.final ? '✓ ອະນຸມັດແລ້ວ' : 'ສົ່ງຕໍ່ໃຫ້ ' + r.next + ' ອະນຸມັດ');
+    afterResult = () => loadPending(); resetIdle(20000);
+    setTimeout(loadSummary, 1500);
+    return;
+  }
+  if (r && r.code === 'login') { startApprove(); $('hint').textContent = 'ໝົດເວລາ ກະລຸນາໃສ່ PIN ໃໝ່'; return; }
+  showError(r); afterResult = () => { show('urgentForm'); resetIdle(180000); };
 }
 
 // ---------------- talk to the sheet ----------------
@@ -1099,6 +1179,7 @@ function showError(r){
     badpin:   ['ລະຫັດ PIN ບໍ່ຖືກຕ້ອງ', r && r.left > 0 ? 'ລອງໄດ້ອີກ ' + r.left + ' ເທື່ອ' : 'ລໍ 5 ນາທີ ຫຼື ແຈ້ງຫົວໜ້າ'],
     badmgr:   ['ລະຫັດຜູ້ຈັດການບໍ່ຖືກຕ້ອງ', ''],
     badappr:  ['PIN ຜູ້ອະນຸມັດບໍ່ຖືກຕ້ອງ', 'ກວດ PIN ແລ້ວລອງໃໝ່'],
+    notyours: ['ທ່ານບໍ່ໄດ້ເປັນຜູ້ອະນຸມັດຂອງພະນັກງານຄົນນີ້', 'ໃຫ້ຜູ້ຈັດການທົ່ວໄປ ຫຼື ເຈົ້າຂອງ ບັນທຶກແທນ'],
     locked:   ['ໃສ່ລະຫັດຜິດຫຼາຍເທື່ອ', 'ລໍ 5 ນາທີ ຫຼື ແຈ້ງຫົວໜ້າ'],
     already:  [(r && r.name ? r.name + ' ' : '') + 'ເຂົ້າວຽກແລ້ວ', 'ເຂົ້າວຽກເວລາ ' + (r && r.time) + '. ຖ້າຈະອອກ ໃຫ້ກົດ ອອກວຽກ'],
     notin:    [(r && r.name ? r.name + ' ' : '') + 'ຍັງບໍ່ໄດ້ເຂົ້າວຽກ', 'ໃຫ້ກົດ ເຂົ້າວຽກ ກ່ອນ'],
