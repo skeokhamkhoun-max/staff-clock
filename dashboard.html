@@ -139,7 +139,7 @@ const CATS = [
   { key: 'exp',   lao: 'ຕ້ອງມາວຽກມື້ນີ້', en: 'Expected today', color: 'var(--exp)',   test: p => ['in','out','late','notyet'].includes(p.st) },
   { key: 'in',    lao: 'ຢູ່ວຽກ',          en: 'At work',        color: 'var(--in)',    test: p => p.st === 'in' },
   { key: 'out',   lao: 'ເລີກວຽກແລ້ວ',     en: 'Clocked out',    color: 'var(--out)',   test: p => p.st === 'out' },
-  { key: 'notin', lao: 'ຍັງບໍ່ມາ',         en: 'Not in yet',     color: 'var(--late)',  test: p => p.st === 'late' || p.st === 'notyet' },
+  { key: 'notin', lao: 'ຍັງບໍ່ມາ',         en: 'Not in yet',     color: 'var(--late)',  test: p => p.st === 'late' },
   { key: 'off',   lao: 'ພັກປະຈຳອາທິດ',    en: 'Weekly day off', color: 'var(--off)',   test: p => p.st === 'off' },
   { key: 'leave', lao: 'ລາພັກ',           en: 'On leave',       color: 'var(--leave)', test: p => p.st === 'leave' }
 ];
