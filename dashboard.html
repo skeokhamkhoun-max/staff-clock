@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Staff Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14302a; --muted:#5d6f6a; --bg:#e9efec; --card:#ffffff; --line:#dde5e1;
+    --exp:#14302a; --in:#1f7a4d; --out:#2f3d7a; --late:#b3261e; --off:#7a5ba8; --leave:#2f6fb3;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans Lao',system-ui,-apple-system,sans-serif}
+  .wrap{max-width:1180px;margin:0 auto;padding:20px 16px 48px}
+  header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  h1{margin:0;font-size:clamp(22px,3vw,30px);font-weight:700}
+  .date{color:var(--muted);font-size:15px;margin-top:2px}
+  .upd{color:var(--muted);font-size:14px;text-align:right}
+  .upd b{color:var(--ink);font-weight:600}
+
+  /* totals */
+  .tiles{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+  .tile{background:var(--card);border-radius:16px;padding:14px 16px 12px;cursor:pointer;border:2px solid transparent;
+        box-shadow:0 1px 2px rgba(0,0,0,.06);position:relative;overflow:hidden;text-align:left;font:inherit;color:inherit}
+  .tile::before{content:"";position:absolute;left:0;top:0;right:0;height:5px;background:var(--c)}
+  .tile:hover{border-color:var(--line)}
+  .tile.on{border-color:var(--c)}
+  .tile .lbl{font-size:14px;font-weight:600;color:var(--muted);line-height:1.35;min-height:38px}
+  .tile .num{font-size:clamp(34px,4.6vw,52px);font-weight:700;line-height:1.1;color:var(--c);font-variant-numeric:tabular-nums}
+  .tile .num small{font-size:.45em;color:var(--muted);font-weight:600}
+  .tile .more{font-size:12px;color:var(--muted);margin-top:2px}
+
+  /* per-branch table */
+  h2{font-size:17px;margin:26px 0 10px}
+  .tblWrap{background:var(--card);border-radius:16px;box-shadow:0 1px 2px rgba(0,0,0,.06);overflow-x:auto}
+  table{width:100%;border-collapse:collapse;min-width:640px}
+  th,td{padding:12px 10px;text-align:center;border-bottom:1px solid var(--line);font-size:15px}
+  th{font-size:13px;color:var(--muted);font-weight:600;background:#f6f9f7}
+  th:first-child,td:first-child{text-align:left;padding-left:16px;font-weight:600}
+  tr:last-child td{border-bottom:0}
+  td.n{cursor:pointer;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--c)}
+  td.n:hover{background:#f3f7f5}
+  td.n.on{background:color-mix(in srgb, var(--c) 12%, white);box-shadow:inset 0 -3px 0 var(--c)}
+  td.n.zero{color:#b6c2bd;font-weight:500}
+  tr.total td{background:#f6f9f7;font-weight:700}
+  tr.detailRow td{padding:0;background:#fbfcfb;text-align:left}
+
+  /* detail panel */
+  .panel{background:var(--card);border-radius:16px;margin-top:12px;padding:14px 16px 16px;box-shadow:0 1px 2px rgba(0,0,0,.06);border-top:5px solid var(--c)}
+  tr.detailRow .panel{margin:0;border-radius:0;box-shadow:none}
+  .pHead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
+  .pHead h3{margin:0;font-size:17px}
+  .close{border:0;background:#eef3f0;border-radius:999px;padding:6px 14px;font:inherit;font-size:14px;cursor:pointer;color:var(--ink)}
+  .grpB{margin-top:10px}
+  .grpB > .bn{font-weight:700;font-size:15px;margin:8px 0 4px;color:var(--ink)}
+  .grpT{margin:0 0 6px}
+  .grpT .tn{font-size:13px;color:var(--muted);font-weight:600;margin:6px 0 2px}
+  .ppl{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px 14px}
+  .p{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 10px;padding:7px 10px;border-radius:10px;background:#f6f9f7;font-size:14px}
+  .p .info{margin-left:auto}
+  .p .nm{font-weight:600}
+  .p .nm span{color:var(--muted);font-weight:400}
+  .p .info{color:var(--muted);text-align:right;white-space:nowrap}
+  .p .info.red{color:var(--late);font-weight:600}
+  .p .info.blue{color:var(--leave);font-weight:600}
+  .chip{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:#fff3d6;color:#8a5a00;margin-left:4px;font-weight:600}
+  .none{color:var(--muted);padding:8px 0}
+
+  .err{background:#fde8e6;color:var(--late);border-radius:12px;padding:12px 14px;margin-bottom:14px;display:none}
+  footer{color:var(--muted);font-size:12px;margin-top:22px;text-align:center}
+
+  /* branch cards (phones) */
+  .bCards{display:none;flex-direction:column;gap:10px}
+  .bCard{background:var(--card);border-radius:16px;padding:12px 12px 10px;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+  .bCard .bn{font-weight:700;font-size:16px;margin:0 0 8px 2px}
+  .bGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .bCell{border:0;background:#f6f9f7;border-radius:10px;padding:6px 6px 5px;text-align:center;font:inherit;color:inherit;cursor:pointer;border-bottom:3px solid transparent}
+  .bCell .v{font-size:22px;font-weight:700;color:var(--c);line-height:1.15}
+  .bCell .v.zero{color:#b6c2bd;font-weight:500}
+  .bCell .l{font-size:11px;color:var(--muted);line-height:1.25}
+  .bCell.on{border-bottom-color:var(--c);background:#eef4f1}
+  .bCard .panel{margin:10px -12px -10px;border-radius:0 0 16px 16px;box-shadow:none}
+  @media (max-width:980px){ .tiles{grid-template-columns:repeat(3,1fr)} }
+  @media (max-width:700px){ .tblWrap{display:none} .bCards{display:flex} }
+  @media (max-width:560px){
+    .tiles{grid-template-columns:repeat(2,1fr);gap:10px}
+    .tile{padding:12px 12px 10px}
+    .ppl{grid-template-columns:1fr}
+    th,td{padding:10px 6px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>ພະນັກງານມື້ນີ້ / Staff today</h1>
+      <div class="date" id="date"></div>
+    </div>
+    <div class="upd">ທຸກສາຂາ / All branches<br><span id="upd">ກຳລັງໂຫຼດ… / Loading…</span></div>
+  </header>
+  <div class="err" id="err"></div>
+
+  <div class="tiles" id="tiles"></div>
+  <div id="tilePanel"></div>
+
+  <h2>ແຍກຕາມສາຂາ / By branch</h2>
+  <div class="tblWrap"><table id="tbl"></table></div>
+  <div class="bCards" id="bCards"></div>
+
+  <footer>ອັບເດດອັດຕະໂນມັດທຸກ 1 ນາທີ / Updates every minute · ແຕະຕົວເລກເພື່ອເບິ່ງລາຍຊື່ / Tap a number to see names</footer>
+</div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbyuBVRj_ENhG2c2FzBsVXIA-5mXvaPC0YUGOLjjmuhf1mp3R7XsX7rIrF5xCt4fMi2G/exec';
+const DKEY = new URLSearchParams(location.search).get('k') || '';
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// categories shown on the dashboard
+const CATS = [
+  { key: 'exp',   lao: 'ຕ້ອງມາວຽກມື້ນີ້', en: 'Expected today', color: 'var(--exp)',   test: p => ['in','out','late','notyet'].includes(p.st) },
+  { key: 'in',    lao: 'ຢູ່ວຽກ',          en: 'At work',        color: 'var(--in)',    test: p => p.st === 'in' },
+  { key: 'out',   lao: 'ເລີກວຽກແລ້ວ',     en: 'Clocked out',    color: 'var(--out)',   test: p => p.st === 'out' },
+  { key: 'notin', lao: 'ຍັງບໍ່ມາ',         en: 'Not in yet',     color: 'var(--late)',  test: p => p.st === 'late' || p.st === 'notyet' },
+  { key: 'off',   lao: 'ພັກປະຈຳອາທິດ',    en: 'Weekly day off', color: 'var(--off)',   test: p => p.st === 'off' },
+  { key: 'leave', lao: 'ລາພັກ',           en: 'On leave',       color: 'var(--leave)', test: p => p.st === 'leave' }
+];
+const LEAVE = { 'Annual leave':'ລາພັກປະຈຳປີ / Annual', 'Sick leave':'ລາປ່ວຍ / Sick', 'Emergency leave':'ລາສຸກເສີນ / Emergency',
+                'Personal leave':'ລາກິດ / Personal', 'Unpaid leave':'ລາບໍ່ໄດ້ເງິນເດືອນ / Unpaid', 'Other':'ອື່ນໆ / Other' };
+const DAYS = ['ວັນອາທິດ','ວັນຈັນ','ວັນອັງຄານ','ວັນພຸດ','ວັນພະຫັດ','ວັນສຸກ','ວັນເສົາ'];
+const DAYS_EN = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS = ['ມັງກອນ','ກຸມພາ','ມີນາ','ເມສາ','ພຶດສະພາ','ມິຖຸນາ','ກໍລະກົດ','ສິງຫາ','ກັນຍາ','ຕຸລາ','ພະຈິກ','ທັນວາ'];
+const MONTHS_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+let data = null;
+let open = null;   // { cat, branch|null }
+
+function dmy(s){ const m = String(s || '').match(/^\d{4}-(\d{2})-(\d{2})$/); return m ? m[2] + '/' + m[1] : s; }
+function count(cat, branch){ return data.people.filter(p => (!branch || p.branch === branch) && cat.test(p)).length; }
+
+function personInfo(p, cat){
+  if (p.st === 'in')    return { t: 'ເຂົ້າ / In ' + p.inTime + (p.late ? ' · ຊ້າ / late ' + p.late + ' ນທ/min' : ''), c: p.late ? 'red' : '' };
+  if (p.st === 'out')   return { t: p.inTime + ' → ' + p.outTime, c: '' };
+  if (p.st === 'late')  return { t: 'ຍັງບໍ່ມາ / Not in · ' + (p.shift.split('–')[0] || ''), c: 'red' };
+  if (p.st === 'notyet')return { t: 'ເລີ່ມ / Starts ' + (p.shift.split('–')[0] || ''), c: '' };
+  if (p.st === 'off')   return { t: 'ພັກ / Off', c: '' };
+  if (p.st === 'leave') {
+    const t = (LEAVE[p.leaveType] || 'ລາພັກ / Leave') + (p.leaveTo ? ' · ' + (p.leaveFrom && p.leaveFrom !== p.leaveTo ? dmy(p.leaveFrom) + '–' : '') + dmy(p.leaveTo) : '') + (p.leaveTime ? ' · ' + p.leaveTime : '');
+    return { t: t, c: 'blue' };
+  }
+  return { t: '', c: '' };
+}
+
+function panelHtml(cat, branch){
+  const list = data.people.filter(p => (!branch || p.branch === branch) && cat.test(p));
+  let h = '<div class="panel" style="--c:' + cat.color + '"><div class="pHead"><h3>' + esc(cat.lao + ' / ' + cat.en) +
+          (branch ? ' · ' + esc(branch) : ' · ທຸກສາຂາ / All branches') + ' (' + list.length + ')</h3>' +
+          '<button class="close" onclick="closePanel()">✕ ປິດ / Close</button></div>';
+  if (!list.length) return h + '<div class="none">ບໍ່ມີ / None</div></div>';
+  const branches = branch ? [branch] : data.branches.filter(b => list.some(p => p.branch === b));
+  branches.forEach(b => {
+    const inB = list.filter(p => p.branch === b);
+    h += '<div class="grpB">' + (branch ? '' : '<div class="bn">' + esc(b) + ' · ' + inB.length + '</div>');
+    const teams = [...new Set(inB.map(p => p.team || ''))].sort((a, c) => (a || 'zz').localeCompare(c || 'zz'));
+    teams.forEach(t => {
+      const inT = inB.filter(p => (p.team || '') === t);
+      h += '<div class="grpT"><div class="tn">' + esc(t || 'ບໍ່ມີທີມ / No team') + ' · ' + inT.length + '</div><div class="ppl">';
+      inT.forEach(p => {
+        const i = personInfo(p, cat);
+        const chip = p.note === 'dayoff' ? '<span class="chip">ມື້ພັກ / day off</span>' : p.note === 'leave' ? '<span class="chip">ຊ່ວງລາ / on leave</span>' : '';
+        h += '<div class="p"><div class="nm">' + esc(p.name) + ' <span>#' + esc(p.id) + '</span>' + chip + '</div><div class="info ' + i.c + '">' + esc(i.t) + '</div></div>';
+      });
+      h += '</div></div>';
+    });
+    h += '</div>';
+  });
+  return h + '</div>';
+}
+
+function render(){
+  // header
+  const d = new Date();
+  $('date').textContent = DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear() +
+                          ' / ' + DAYS_EN[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS_EN[d.getMonth()] + ' ' + d.getFullYear();
+  $('upd').innerHTML = 'ອັບເດດ / Updated <b>' + esc(data.time) + '</b>';
+
+  // total tiles
+  const exp = count(CATS[0]);
+  $('tiles').innerHTML = CATS.map(c => {
+    const n = count(c);
+    const extra = c.key === 'in' ? ' <small>/ ' + exp + '</small>' : '';
+    return '<button class="tile' + (open && !open.branch && open.cat === c.key ? ' on' : '') + '" style="--c:' + c.color + '" data-cat="' + c.key + '">' +
+           '<div class="lbl">' + esc(c.lao) + '<br>' + esc(c.en) + '</div><div class="num">' + n + extra + '</div><div class="more">ແຕະເບິ່ງ / Tap ›</div></button>';
+  }).join('');
+  $('tiles').querySelectorAll('.tile').forEach(t => t.onclick = () => toggle(t.dataset.cat, null));
+  $('tilePanel').innerHTML = open && !open.branch ? panelHtml(CATS.find(c => c.key === open.cat), null) : '';
+
+  // branch table
+  let h = '<tr><th>ສາຂາ / Branch</th>' + CATS.map(c => '<th>' + esc(c.lao) + '<br>' + esc(c.en) + '</th>').join('') + '</tr>';
+  data.branches.forEach(b => {
+    h += '<tr><td>' + esc(b) + '</td>' + CATS.map(c => {
+      const n = count(c, b);
+      const on = open && open.branch === b && open.cat === c.key;
+      return '<td class="n' + (n ? '' : ' zero') + (on ? ' on' : '') + '" style="--c:' + c.color + '" data-cat="' + c.key + '" data-b="' + esc(b) + '">' + n + '</td>';
+    }).join('') + '</tr>';
+    if (open && open.branch === b) h += '<tr class="detailRow"><td colspan="' + (CATS.length + 1) + '">' + panelHtml(CATS.find(c => c.key === open.cat), b) + '</td></tr>';
+  });
+  h += '<tr class="total"><td>ລວມ / Total</td>' + CATS.map(c => '<td style="color:' + c.color + '">' + count(c) + '</td>').join('') + '</tr>';
+  $('tbl').innerHTML = h;
+  $('tbl').querySelectorAll('td.n').forEach(td => td.onclick = () => toggle(td.dataset.cat, td.dataset.b));
+
+  // the same numbers as cards for phones
+  $('bCards').innerHTML = data.branches.map(b => '<div class="bCard"><div class="bn">' + esc(b) + '</div><div class="bGrid">' +
+    CATS.map(c => {
+      const n = count(c, b), on = open && open.branch === b && open.cat === c.key;
+      return '<button class="bCell' + (on ? ' on' : '') + '" style="--c:' + c.color + '" data-cat="' + c.key + '" data-b="' + esc(b) + '">' +
+             '<div class="v' + (n ? '' : ' zero') + '">' + n + '</div><div class="l">' + esc(c.lao) + '<br>' + esc(c.en) + '</div></button>';
+    }).join('') + '</div>' + (open && open.branch === b ? panelHtml(CATS.find(c => c.key === open.cat), b) : '') + '</div>').join('');
+  $('bCards').querySelectorAll('.bCell').forEach(el => el.onclick = () => toggle(el.dataset.cat, el.dataset.b));
+}
+
+function toggle(cat, branch){
+  open = (open && open.cat === cat && open.branch === branch) ? null : { cat: cat, branch: branch };
+  render();
+  const el = branch ? (window.innerWidth <= 700 ? document.querySelector('.bCard .panel') : document.querySelector('tr.detailRow')) : $('tilePanel');
+  if (open && el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function closePanel(){ open = null; render(); }
+
+async function load(){
+  if (!DKEY) { showErr('ລິ້ງບໍ່ຖືກຕ້ອງ / This link is missing its key'); return; }
+  try {
+    const r = await fetch(API, { method: 'POST', body: JSON.stringify({ op: 'dash', dkey: DKEY }) });
+    const j = await r.json();
+    if (!j.ok) { showErr(j.code === 'badkey' ? 'ລິ້ງບໍ່ຖືກຕ້ອງ / This link is not valid' : 'ໂຫຼດບໍ່ໄດ້ / Could not load'); return; }
+    data = j; $('err').style.display = 'none';
+    if (open && open.branch && data.branches.indexOf(open.branch) < 0) open = null;
+    render();
+  } catch (e) { showErr('ເຊື່ອມຕໍ່ບໍ່ໄດ້ / No connection — ລອງໃໝ່ອັດຕະໂນມັດ / retrying'); }
+}
+function showErr(t){ $('err').textContent = t; $('err').style.display = 'block'; }
+
+load();
+setInterval(load, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
+</script>
+</body>
+</html>
