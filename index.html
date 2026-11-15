@@ -111,7 +111,7 @@
   #choiceSub{font-size:clamp(18px,2.6vw,24px);max-width:34ch;color:var(--muted)}
   .actions{display:grid;grid-template-columns:1fr 1fr;gap:20px;height:min(30vh,240px)}
   .act{border-radius:22px;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
-  .act b{font-size:clamp(34px,5.5vw,60px);font-weight:700}
+  .act b{font-size:clamp(28px,4.4vw,52px);font-weight:700;text-align:center;line-height:1.2;padding:0 10px}
   .act span{font-size:clamp(15px,2vw,20px);opacity:.85}
   .act.in{background:var(--in)} .act.out{background:var(--out)}
   .act:active{transform:scale(.98)}
@@ -201,63 +201,63 @@
 <body>
 
 <section id="home" class="screen on">
-  <div class="top"><div class="branch" id="branchName"></div><div class="topRight"><button class="leaveBtn apprBadge hidden" id="apprBadge" onclick="startApprove()">✅ ລໍອະນຸມັດ <b id="apprCount"></b></button><button class="leaveBtn" id="leaveBtn" onclick="startLeave()">📝 ຂໍລາພັກ</button><div class="date" id="today"></div></div></div>
+  <div class="top"><div class="branch" id="branchName"></div><div class="topRight"><button class="leaveBtn apprBadge hidden" id="apprBadge" onclick="startApprove()">✅ ລໍອະນຸມັດ / To approve <b id="apprCount"></b></button><button class="leaveBtn" id="leaveBtn" onclick="startLeave()">📝 ຂໍລາພັກ / Leave</button><div class="date" id="today"></div></div></div>
   <div class="banner" id="banner"></div>
   <div class="clock" id="clock"></div>
   <div class="summary hidden" id="summary">
-    <div class="tile exp" data-filter="notin"><div class="lbl">ຕ້ອງມາວຽກມື້ນີ້</div><div class="num" id="sExp">–</div><div class="names" id="nExp"></div><div class="more">ເບິ່ງ ›</div></div>
-    <div class="tile work" data-filter="work"><div class="lbl">ຢູ່ວຽກແລ້ວ</div><div class="num" id="sWork">–</div><div class="names" id="nWork"></div><div class="more">ເບິ່ງ ›</div></div>
-    <div class="tile off" data-filter="off"><div class="lbl">ພັກປະຈຳອາທິດ</div><div class="num" id="sOff">–</div><div class="names" id="nOff"></div><div class="more">ເບິ່ງ ›</div></div>
-    <div class="tile leave" data-filter="leave"><div class="lbl">ລາພັກ</div><div class="num" id="sLeave">–</div><div class="names" id="nLeave"></div><div class="more">ເບິ່ງ ›</div></div>
+    <div class="tile exp" data-filter="notin"><div class="lbl">ຕ້ອງມາວຽກມື້ນີ້ / Expected today</div><div class="num" id="sExp">–</div><div class="names" id="nExp"></div><div class="more">ເບິ່ງ / View ›</div></div>
+    <div class="tile work" data-filter="work"><div class="lbl">ຢູ່ວຽກແລ້ວ / At work</div><div class="num" id="sWork">–</div><div class="names" id="nWork"></div><div class="more">ເບິ່ງ / View ›</div></div>
+    <div class="tile off" data-filter="off"><div class="lbl">ພັກປະຈຳອາທິດ / Weekly day off</div><div class="num" id="sOff">–</div><div class="names" id="nOff"></div><div class="more">ເບິ່ງ / View ›</div></div>
+    <div class="tile leave" data-filter="leave"><div class="lbl">ລາພັກ / On leave</div><div class="num" id="sLeave">–</div><div class="names" id="nLeave"></div><div class="more">ເບິ່ງ / View ›</div></div>
   </div>
   <div class="detail hidden" id="detail">
-    <div class="detailHead"><span id="detailTitle"></span><button class="ghost" id="detailClose">✕ ປິດ</button></div>
+    <div class="detailHead"><span id="detailTitle"></span><button class="ghost" id="detailClose">✕ ປິດ / Close</button></div>
     <div class="detailBody" id="detailBody"></div>
   </div>
-  <div class="updated hidden" id="updated"><b>ແຕະເພື່ອເບິ່ງຕາມທີມ ›</b><span id="updTime"></span></div>
-  <div class="status" id="loadStatus">ກຳລັງໂຫຼດລະບົບສະແກນໜ້າ…</div>
+  <div class="updated hidden" id="updated"><b>ແຕະເພື່ອເບິ່ງຕາມທີມ / Tap to view by team ›</b><span id="updTime"></span></div>
+  <div class="status" id="loadStatus">ກຳລັງໂຫຼດລະບົບສະແກນໜ້າ… / Loading face scan…</div>
   <div class="actions">
-    <button class="act in" id="btnIn" onclick="startFace('In')" disabled><b>ເຂົ້າວຽກ</b><span>Clock in</span></button>
-    <button class="act out" id="btnOut" onclick="startFace('Out')" disabled><b>ອອກວຽກ</b><span>Clock out</span></button>
+    <button class="act in" id="btnIn" onclick="startFace('In')" disabled><b>ເຂົ້າວຽກ / Clock in</b></button>
+    <button class="act out" id="btnOut" onclick="startFace('Out')" disabled><b>ອອກວຽກ / Clock out</b></button>
   </div>
 </section>
 
 <section id="teams" class="screen">
-  <div class="bar"><h1 id="teamsTitle" class="mgr">ທີມມື້ນີ້</h1><button class="ghost" onclick="goHome()">‹ ກັບຄືນ</button></div>
+  <div class="bar"><h1 id="teamsTitle" class="mgr">ທີມມື້ນີ້ / Teams today</h1><button class="ghost" onclick="goHome()">‹ ກັບຄືນ / Back</button></div>
   <div class="teamGrid" id="teamGrid"></div>
 </section>
 
 <section id="leaveForm" class="screen">
-  <div class="bar"><h1 class="mgr" id="leaveTitle">ຂໍລາພັກ</h1><button class="ghost" onclick="goHome()">ຍົກເລີກ</button></div>
+  <div class="bar"><h1 class="mgr" id="leaveTitle">ຂໍລາພັກ / Leave request</h1><button class="ghost" onclick="goHome()">ຍົກເລີກ / Cancel</button></div>
   <div class="formBox">
-    <div><div class="fLabel">ປະເພດການລາ</div><div class="types" id="leaveTypes"></div></div>
+    <div><div class="fLabel">ປະເພດການລາ / Leave type</div><div class="types" id="leaveTypes"></div></div>
     <div class="dates">
-      <div><div class="fLabel">ຈາກວັນທີ</div><input type="date" id="lvFrom"></div>
-      <div><div class="fLabel">ຫາວັນທີ</div><input type="date" id="lvTo"></div>
+      <div><div class="fLabel">ຈາກວັນທີ / From</div><input type="date" id="lvFrom"></div>
+      <div><div class="fLabel">ຫາວັນທີ / To</div><input type="date" id="lvTo"></div>
     </div>
     <div class="daysInfo" id="lvDays"></div>
-    <div><div class="fLabel">ເຫດຜົນ (ບໍ່ບັງຄັບ)</div><textarea id="lvReason" maxlength="200"></textarea></div>
-    <button class="sendBtn" id="lvSend" onclick="sendLeave()">ສົ່ງຄຳຂໍ</button>
+    <div><div class="fLabel">ເຫດຜົນ (ບໍ່ບັງຄັບ) / Reason (optional)</div><textarea id="lvReason" maxlength="200"></textarea></div>
+    <button class="sendBtn" id="lvSend" onclick="sendLeave()">ສົ່ງຄຳຂໍ / Send request</button>
   </div>
 </section>
 
 <section id="mgrMenu" class="screen">
-  <div class="bar"><h1 class="mgr">ຜູ້ຈັດການ</h1><button class="ghost" onclick="goHome()">ອອກ</button></div>
+  <div class="bar"><h1 class="mgr">ຜູ້ຈັດການ / Manager</h1><button class="ghost" onclick="goHome()">ອອກ / Exit</button></div>
   <div class="menuBox">
-    <button class="menuBtn" onclick="mgrPick('enrollId')">📷 ລົງທະບຽນໃບໜ້າ<small>Register a face</small></button>
-    <button class="menuBtn" onclick="mgrPick('manualId')">✍️ ບັນທຶກເຂົ້າ/ອອກວຽກແທນ<small>Clock in or out for a staff member</small></button>
-    <button class="menuBtn" onclick="startApprove()">✅ ອະນຸມັດການລາພັກ<small>Approve leave requests</small></button>
+    <button class="menuBtn" onclick="mgrPick('enrollId')">📷 ລົງທະບຽນໃບໜ້າ / Register a face</button>
+    <button class="menuBtn" onclick="mgrPick('manualId')">✍️ ບັນທຶກເຂົ້າ-ອອກວຽກແທນ / Clock in or out for someone</button>
+    <button class="menuBtn" onclick="startApprove()">✅ ອະນຸມັດການລາພັກ / Approve leave</button>
     <div class="menuInfo" id="mgrInfo"></div>
   </div>
 </section>
 
 <section id="manualForm" class="screen">
-  <div class="bar"><h1 class="mgr" id="manTitle">ບັນທຶກແທນ</h1><button class="ghost" onclick="showMgrMenu()">ກັບຄືນ</button></div>
+  <div class="bar"><h1 class="mgr" id="manTitle">ບັນທຶກແທນ / Record for staff</h1><button class="ghost" onclick="showMgrMenu()">ກັບຄືນ / Back</button></div>
   <div class="formBox">
-    <div><div class="fLabel">ບັນທຶກ</div><div class="types" id="manAction"></div></div>
-    <div class="dates"><div><div class="fLabel">ເວລາ (ມື້ນີ້)</div><input type="time" id="manTime"></div><div></div></div>
-    <div><div class="fLabel">ເຫດຜົນ</div><div class="types" id="manReason"></div></div>
-    <button class="sendBtn" id="manSend" onclick="sendManual()">ບັນທຶກ</button>
+    <div><div class="fLabel">ບັນທຶກ / Save</div><div class="types" id="manAction"></div></div>
+    <div class="dates"><div><div class="fLabel">ເວລາ (ມື້ນີ້) / Time (today)</div><input type="time" id="manTime"></div><div></div></div>
+    <div><div class="fLabel">ເຫດຜົນ / Reason</div><div class="types" id="manReason"></div></div>
+    <button class="sendBtn" id="manSend" onclick="sendManual()">ບັນທຶກ / Save</button>
   </div>
 </section>
 
@@ -268,40 +268,40 @@
 </section>
 
 <section id="cam" class="screen">
-  <div class="bar"><h1 id="camTitle"></h1><button class="ghost" onclick="goHome()">ຍົກເລີກ</button></div>
+  <div class="bar"><h1 id="camTitle"></h1><button class="ghost" onclick="goHome()">ຍົກເລີກ / Cancel</button></div>
   <div class="stage"><video id="video" autoplay muted playsinline></video><div class="oval" id="oval"></div></div>
   <div class="camMsg" id="camMsg"></div>
   <div class="camSub" id="camSub"></div>
   <div class="row hidden" id="camButtons">
-    <button class="pill dark" onclick="retryFace()">ລອງໃໝ່</button>
-    <button class="pill" id="usePinBtn" onclick="startPin()">ໃຊ້ລະຫັດ PIN</button>
+    <button class="pill dark" onclick="retryFace()">ລອງໃໝ່ / Try again</button>
+    <button class="pill" id="usePinBtn" onclick="startPin()">ໃຊ້ລະຫັດ PIN / Use PIN</button>
   </div>
 </section>
 
 <section id="urgentForm" class="screen">
-  <div class="bar"><h1 class="mgr">ລາພັກດ່ວນ · ບັນທຶກແທນ</h1><button class="ghost" onclick="loadPending()">ກັບຄືນ</button></div>
+  <div class="bar"><h1 class="mgr">ລາພັກດ່ວນ · ບັນທຶກແທນ / Urgent leave</h1><button class="ghost" onclick="loadPending()">ກັບຄືນ / Back</button></div>
   <div class="formBox">
-    <div><div class="fLabel">ລະຫັດພະນັກງານ</div><input id="ugId" class="ugInput" inputmode="numeric" autocomplete="off" maxlength="8"><div class="ugWho" id="ugWho"></div></div>
-    <div><div class="fLabel">ປະເພດການລາ</div><div class="types" id="ugTypes"></div></div>
+    <div><div class="fLabel">ລະຫັດພະນັກງານ / Staff ID</div><input id="ugId" class="ugInput" inputmode="numeric" autocomplete="off" maxlength="8"><div class="ugWho" id="ugWho"></div></div>
+    <div><div class="fLabel">ປະເພດການລາ / Leave type</div><div class="types" id="ugTypes"></div></div>
     <div class="dates">
-      <div><div class="fLabel">ຈາກວັນທີ</div><input type="date" id="ugFrom"></div>
-      <div><div class="fLabel">ຫາວັນທີ</div><input type="date" id="ugTo"></div>
+      <div><div class="fLabel">ຈາກວັນທີ / From</div><input type="date" id="ugFrom"></div>
+      <div><div class="fLabel">ຫາວັນທີ / To</div><input type="date" id="ugTo"></div>
     </div>
-    <div><div class="fLabel">ເລີ່ມລາເວລາ <small style="font-weight:400">(ວ່າງໄວ້ = ລາທັງມື້)</small></div>
-      <div class="ugTimeRow"><input type="time" id="ugTime" class="ugInput"><button class="pill" onclick="ugNow()">ຕອນນີ້</button><button class="pill" onclick="$('ugTime').value=''; checkUrgent()">ທັງມື້</button></div></div>
+    <div><div class="fLabel">ເລີ່ມລາເວລາ / Leave starts at <small style="font-weight:400">(ວ່າງໄວ້ = ລາທັງມື້) / (empty = all day)</small></div>
+      <div class="ugTimeRow"><input type="time" id="ugTime" class="ugInput"><button class="pill" onclick="ugNow()">ຕອນນີ້ / Now</button><button class="pill" onclick="$('ugTime').value=''; checkUrgent()">ທັງມື້ / All day</button></div></div>
     <div class="daysInfo" id="ugDays"></div>
-    <div><div class="fLabel">ເຫດຜົນ / ລາຍລະອຽດ</div><textarea id="ugReason" maxlength="200"></textarea></div>
-    <button class="sendBtn" id="ugSend" onclick="sendUrgent()">ບັນທຶກ</button>
+    <div><div class="fLabel">ເຫດຜົນ / ລາຍລະອຽດ / Reason / details</div><textarea id="ugReason" maxlength="200"></textarea></div>
+    <button class="sendBtn" id="ugSend" onclick="sendUrgent()">ບັນທຶກ / Save</button>
   </div>
 </section>
 
 <section id="approve" class="screen">
-  <div class="bar"><h1 class="mgr" id="apprTitle">ລໍຖ້າອະນຸມັດ</h1><div><button class="ghost apprBtn" onclick="openUrgent()">➕ ລາພັກດ່ວນ</button><button class="ghost" onclick="loadPending()">ໂຫຼດໃໝ່</button><button class="ghost" onclick="goHome()">ອອກ</button></div></div>
+  <div class="bar"><h1 class="mgr" id="apprTitle">ລໍຖ້າອະນຸມັດ / Waiting for approval</h1><div><button class="ghost apprBtn" onclick="openUrgent()">➕ ລາພັກດ່ວນ / Urgent leave</button><button class="ghost" onclick="loadPending()">ໂຫຼດໃໝ່ / Reload</button><button class="ghost" onclick="goHome()">ອອກ / Exit</button></div></div>
   <div class="apprList" id="apprList"></div>
 </section>
 
 <section id="pad" class="screen">
-  <div class="bar"><h1 id="padTitle"></h1><div><button class="ghost apprBtn hidden" id="padApprove" onclick="startApprove()">✅ ອະນຸມັດການລາ</button><button class="ghost" onclick="goHome()">ຍົກເລີກ</button></div></div>
+  <div class="bar"><h1 id="padTitle"></h1><div><button class="ghost apprBtn hidden" id="padApprove" onclick="startApprove()">✅ ອະນຸມັດການລາ / Approve leave</button><button class="ghost" onclick="goHome()">ຍົກເລີກ / Cancel</button></div></div>
   <div class="padRow">
   <div class="padBox">
     <div class="prompt" id="prompt"></div>
@@ -340,6 +340,8 @@ const BRANCH = (new URLSearchParams(location.search).get('branch')) || setting('
 const KEY = setting('kiosk_key');
 
 const DAYS = ['ວັນອາທິດ','ວັນຈັນ','ວັນອັງຄານ','ວັນພຸດ','ວັນພະຫັດ','ວັນສຸກ','ວັນເສົາ'];
+const DAYS_EN = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MONTHS = ['ມັງກອນ','ກຸມພາ','ມີນາ','ເມສາ','ພຶດສະພາ','ມິຖຸນາ','ກໍລະກົດ','ສິງຫາ','ກັນຍາ','ຕຸລາ','ພະຈິກ','ທັນວາ'];
 const $ = id => document.getElementById(id);
 
@@ -350,15 +352,15 @@ let managerCode = '';
 
 $('branchName').textContent = BRANCH || 'Clock in';
 function showBanner(t){ $('banner').textContent = t; $('banner').style.display = 'block'; }
-if (!BRANCH) showBanner('ເຄື່ອງນີ້ຍັງບໍ່ໄດ້ຕັ້ງສາຂາ. ໃຊ້ລິ້ງທີ່ມີ ?branch= ແລະ key=');
-else if (!KEY) showBanner('ເຄື່ອງນີ້ຍັງບໍ່ໄດ້ເຊື່ອມຕໍ່ລະບົບ. ເປີດລິ້ງທີ່ມີ key= ຄັ້ງທຳອິດ');
+if (!BRANCH) showBanner('ເຄື່ອງນີ້ຍັງບໍ່ໄດ້ຕັ້ງສາຂາ. ໃຊ້ລິ້ງທີ່ມີ ?branch= ແລະ key= / This tablet has no branch set. Open the link with ?branch= and key=');
+else if (!KEY) showBanner('ເຄື່ອງນີ້ຍັງບໍ່ໄດ້ເຊື່ອມຕໍ່ລະບົບ. ເປີດລິ້ງທີ່ມີ key= ຄັ້ງທຳອິດ / This tablet is not connected. Open the link with key= once');
 
 // ---------------- clock ----------------
 function pad2(n){ return String(n).padStart(2,'0'); }
 function tick(){
   const d = new Date();
   $('clock').innerHTML = '<div class="t">' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + '<span class="sec">' + pad2(d.getSeconds()) + '</span></div>';
-  $('today').textContent = DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+  $('today').textContent = DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear() + ' / ' + DAYS_EN[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS_EN[d.getMonth()];
 }
 tick(); setInterval(tick, 1000);
 
@@ -384,10 +386,10 @@ async function loadSummary(){
   $('summary').classList.remove('hidden'); $('updated').classList.remove('hidden');
   $('clock').classList.add('small');
   $('sExp').textContent = r.expected;
-  $('nExp').innerHTML = r.notIn.length ? 'ຍັງບໍ່ມາ: ' + namesHtml(r.notIn) : (r.expected ? 'ມາຄົບແລ້ວ' : '');
+  $('nExp').innerHTML = r.notIn.length ? 'ຍັງບໍ່ມາ / Not in: ' + namesHtml(r.notIn) : (r.expected ? 'ມາຄົບແລ້ວ / Everyone is in' : '');
   $('sWork').innerHTML = r.atWork.length + ' <small>/ ' + r.expected + '</small>';
-  $('nWork').innerHTML = r.atWork.map(a => (a.late ? '<span class="late">' : '<span>') + esc(a.name) + ' ' + esc(a.time) + '</span>' + (a.extra ? '<span class="extra">' + (a.extra === 'dayoff' ? 'ວັນພັກ' : 'ລາພັກ') + '</span>' : '')).join(', ')
-    + (r.clockedOut.length ? '<br>ອອກແລ້ວ: ' + namesHtml(r.clockedOut) : '');
+  $('nWork').innerHTML = r.atWork.map(a => (a.late ? '<span class="late">' : '<span>') + esc(a.name) + ' ' + esc(a.time) + '</span>' + (a.extra ? '<span class="extra">' + (a.extra === 'dayoff' ? 'ວັນພັກ / Day off' : 'ລາພັກ / Leave') + '</span>' : '')).join(', ')
+    + (r.clockedOut.length ? '<br>ອອກແລ້ວ / Out: ' + namesHtml(r.clockedOut) : '');
   $('sOff').textContent = r.dayOff.length;  $('nOff').innerHTML = namesHtml(r.dayOff);
   $('sLeave').textContent = r.leave.length; $('nLeave').innerHTML = namesHtml(r.leave);
   $('apprBadge').classList.toggle('hidden', !(r.pendingLeave > 0)); $('apprCount').textContent = r.pendingLeave || '';
@@ -395,31 +397,31 @@ async function loadSummary(){
   if ($('teams').classList.contains('on')) renderTeams();
   if (expanded) renderDetail();
   const d = new Date();
-  $('updTime').textContent = 'ອັບເດດ ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  $('updTime').textContent = 'ອັບເດດ / Updated ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
 }
 
-function extraText(p){ return p.extra === 'dayoff' ? ' · ວັນພັກ' : p.extra === 'leave' ? ' · ຊ່ວງລາພັກ' : ''; }
+function extraText(p){ return p.extra === 'dayoff' ? ' · ວັນພັກ / Day off' : p.extra === 'leave' ? ' · ຊ່ວງລາພັກ / On leave' : ''; }
 // ---------------- teams page ----------------
 let lastSummary = null;
 const ST_ORDER = { in: 0, inLate: 1, absent: 2, notyet: 3, out: 4, off: 5, leave: 6 };
 function chipText(p){
   switch (p.st) {
     case 'in': return '✓ ' + p.time + extraText(p);
-    case 'inLate': return 'ຊ້າ · ' + p.time + extraText(p);
-    case 'absent': return 'ຍັງບໍ່ມາ (ຊ້າ)';
-    case 'notyet': return 'ຍັງບໍ່ມາ · ' + p.shift;
-    case 'out': return 'ອອກແລ້ວ ' + (p.out || '');
-    case 'off': return 'ພັກປະຈຳ';
-    case 'leave': return 'ລາພັກ';
+    case 'inLate': return 'ຊ້າ / Late · ' + p.time + extraText(p);
+    case 'absent': return 'ຍັງບໍ່ມາ (ຊ້າ) / Not in (late)';
+    case 'notyet': return 'ຍັງບໍ່ມາ / Not in · ' + p.shift;
+    case 'out': return 'ອອກແລ້ວ / Out ' + (p.out || '');
+    case 'off': return 'ພັກປະຈຳ / Day off';
+    case 'leave': return 'ລາພັກ / On leave';
   }
   return '';
 }
 const FILTERS = {
-  all:   { title: 'ທີມມື້ນີ້',        sts: null },
-  work:  { title: 'ຢູ່ວຽກແລ້ວ',      sts: ['in', 'inLate'] },
-  notin: { title: 'ຍັງບໍ່ມາວຽກ',      sts: ['absent', 'notyet'] },
-  off:   { title: 'ພັກປະຈຳອາທິດ',    sts: ['off'] },
-  leave: { title: 'ລາພັກ',          sts: ['leave'] }
+  all:   { title: 'ທີມມື້ນີ້ / Teams today',        sts: null },
+  work:  { title: 'ຢູ່ວຽກແລ້ວ / At work',      sts: ['in', 'inLate'] },
+  notin: { title: 'ຍັງບໍ່ມາວຽກ / Not in yet',      sts: ['absent', 'notyet'] },
+  off:   { title: 'ພັກປະຈຳອາທິດ / Weekly day off',    sts: ['off'] },
+  leave: { title: 'ລາພັກ / On leave',          sts: ['leave'] }
 };
 let teamFilter = 'all';
 function renderTeams(){
@@ -427,7 +429,7 @@ function renderTeams(){
   const f = FILTERS[teamFilter] || FILTERS.all;
   const match = p => !f.sts || f.sts.indexOf(p.st) >= 0;
   const total = r.people.filter(match).length;
-  $('teamsTitle').textContent = f.title + (f.sts ? ' · ' + total + ' ຄົນ' : '') + ' · ' + BRANCH;
+  $('teamsTitle').textContent = f.title + (f.sts ? ' · ' + total + ' ຄົນ/people' : '') + ' · ' + BRANCH;
   const order = (r.teams || []).slice();
   r.people.forEach(p => { if (p.team && order.indexOf(p.team) < 0) order.push(p.team); });
   if (r.people.some(p => !p.team)) order.push('');
@@ -439,13 +441,13 @@ function renderTeams(){
     const working = members.filter(p => p.st === 'in' || p.st === 'inLate').length;
     const expected = members.filter(p => p.st !== 'off' && p.st !== 'leave').length;
     const card = document.createElement('div'); card.className = 'team';
-    const count = f.sts ? members.length + ' <small>ຄົນ</small>' : working + ' <small>/ ' + expected + '</small>';
+    const count = f.sts ? members.length + ' <small>ຄົນ / people</small>' : working + ' <small>/ ' + expected + '</small>';
     card.innerHTML = '<h2>' + esc(team || 'ບໍ່ມີທີມ') + '<span>' + count + '</span></h2>' +
       (members.length ? members.map(p => '<div class="person"><span>' + esc(p.name) + '</span><span class="chip ' + p.st + '">' + esc(chipText(p)) + '</span></div>').join('')
-                      : '<div class="emptyTeam">ບໍ່ມີພະນັກງານໃນສາຂານີ້</div>');
+                      : '<div class="emptyTeam">ບໍ່ມີພະນັກງານໃນສາຂານີ້ / No staff in this branch</div>');
     grid.appendChild(card);
   });
-  if (!grid.children.length) grid.innerHTML = '<div class="emptyAll">ບໍ່ມີໃຜ</div>';
+  if (!grid.children.length) grid.innerHTML = '<div class="emptyAll">ບໍ່ມີໃຜ / Nobody</div>';
 }
 // ---------------- expand one box on the home screen ----------------
 let expanded = null, expandTimer = null;
@@ -465,7 +467,7 @@ function renderDetail(){
   const r = lastSummary, f = FILTERS[expanded]; if (!r || !f) return;
   const match = p => f.sts.indexOf(p.st) >= 0;
   const list = r.people.filter(match);
-  $('detailTitle').textContent = f.title + ' · ' + list.length + ' ຄົນ';
+  $('detailTitle').textContent = f.title + ' · ' + list.length + ' ຄົນ/people';
   const order = (r.teams || []).slice();
   list.forEach(p => { if (p.team && order.indexOf(p.team) < 0) order.push(p.team); });
   if (list.some(p => !p.team)) order.push('');
@@ -474,10 +476,10 @@ function renderDetail(){
     const members = list.filter(p => (p.team || '') === team)
       .sort((a, b) => (ST_ORDER[a.st] - ST_ORDER[b.st]) || a.name.localeCompare(b.name));
     if (!members.length) return;
-    html += '<div class="grp"><h3>' + esc(team || 'ບໍ່ມີທີມ') + '<small>' + members.length + ' ຄົນ</small></h3>' +
+    html += '<div class="grp"><h3>' + esc(team || 'ບໍ່ມີທີມ / No team') + '<small>' + members.length + ' ຄົນ / people</small></h3>' +
       members.map(p => '<div class="person"><span>' + esc(p.name) + '</span><span class="chip ' + p.st + '">' + esc(chipText(p)) + '</span></div>').join('') + '</div>';
   });
-  $('detailBody').innerHTML = html || '<div class="emptyAll">ບໍ່ມີໃຜ</div>';
+  $('detailBody').innerHTML = html || '<div class="emptyAll">ບໍ່ມີໃຜ / Nobody</div>';
 }
 
 function openTeams(filter){
@@ -503,7 +505,7 @@ async function loadModels(){
     $('loadStatus').textContent = '';
   } catch (e) {
     console.error(e);
-    $('loadStatus').textContent = 'ໂຫຼດລະບົບສະແກນໜ້າບໍ່ໄດ້ — ໃຊ້ລະຫັດ PIN ແທນ';
+    $('loadStatus').textContent = 'ໂຫຼດລະບົບສະແກນໜ້າບໍ່ໄດ້ — ໃຊ້ລະຫັດ PIN ແທນ / Face scan failed to load — use PIN';
   }
   $('btnIn').disabled = false; $('btnOut').disabled = false;
 }
@@ -609,13 +611,17 @@ function faceBigEnough(det){ return det.detection.box.width > frame.width * 0.18
 const detOpts = () => new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.4 });
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-function camText(msg, sub){ $('camMsg').textContent = msg || ''; $('camSub').textContent = sub || ''; }
+function camText(msg, sub){
+  // English-only second line goes on the same line after a slash: "Lao / English"
+  if (msg && sub && !/[\u0E80-\u0EFF]/.test(sub) && msg.indexOf(' / ') < 0) { msg = msg + ' / ' + sub; sub = ''; }
+  $('camMsg').textContent = msg || ''; $('camSub').textContent = sub || '';
+}
 
 // ---------------- clock in / out by face ----------------
 async function startFace(a){
   collapseDetail();
   action = a; mode = 'face';
-  $('camTitle').textContent = (action === 'In' ? 'ເຂົ້າວຽກ' : action === 'Out' ? 'ອອກວຽກ' : 'ຂໍລາພັກ');
+  $('camTitle').textContent = (action === 'In' ? 'ເຂົ້າວຽກ / Clock in' : action === 'Out' ? 'ອອກວຽກ / Clock out' : 'ຂໍລາພັກ / Leave request');
   $('camTitle').className = (action === 'In' ? 'in' : action === 'Out' ? 'out' : 'mgr');
   faceId = '';
   if (!modelsReady) { startPin(); return; }
@@ -623,7 +629,7 @@ async function startFace(a){
   padState = { kind: 'faceId', value: '' };
   $('padTitle').textContent = $('camTitle').textContent;
   $('padTitle').className = $('camTitle').className;
-  $('hint').textContent = 'ແລ້ວສະແກນໃບໜ້າ';
+  $('hint').textContent = 'ແລ້ວສະແກນໃບໜ້າ / then scan your face';
   show('pad'); renderPad(); resetIdle();
   openStream();   // warm up the camera while the ID is typed
 }
@@ -634,10 +640,10 @@ async function runFace(){
   const token = ++runToken;
   $('camButtons').classList.add('hidden');
   $('oval').classList.remove('good');
-  camText('ກຳລັງເປີດກ້ອງ…');
+  camText('ກຳລັງເປີດກ້ອງ… / Opening camera…');
   if (!(await startCamera())) {
     if (token !== runToken) return;
-    camText('ເປີດກ້ອງບໍ່ໄດ້', 'ອະນຸຍາດໃຫ້ໃຊ້ກ້ອງ ຫຼື ໃຊ້ລະຫັດ PIN');
+    camText('ເປີດກ້ອງບໍ່ໄດ້ / Camera failed', 'ອະນຸຍາດໃຫ້ໃຊ້ກ້ອງ ຫຼື ໃຊ້ລະຫັດ PIN / Allow the camera or use PIN');
     $('camButtons').classList.remove('hidden'); return;
   }
   const v = $('video');
@@ -659,14 +665,14 @@ async function runFace(){
         base = base === null ? yaw : base;
         $('oval').classList.add('good');
         camText('ຢູ່ນິ່ງໆ…', 'Hold still');
-      } else camText('ຫັນໜ້າຊື່ໆເຂົ້າກ້ອງ', 'Face the camera straight');
+      } else camText('ຫັນໜ້າຊື່ໆເຂົ້າກ້ອງ / Face the camera straight', 'Face the camera straight');
     } else {
       $('oval').classList.remove('good');
       camText(det ? 'ເຂົ້າມາໃກ້ກ້ອງອີກໜ້ອຍ' : 'ຫັນໜ້າເຂົ້າກ້ອງ ໃຫ້ໜ້າຢູ່ໃນວົງ', det ? 'Come a little closer' : 'Look at the camera');
     }
     await sleep(60);
   }
-  if (samples.length < 3) return faceFail(token, 'ບໍ່ເຫັນໃບໜ້າ', 'ລອງໃໝ່ ຫຼື ໃຊ້ລະຫັດ PIN');
+  if (samples.length < 3) return faceFail(token, 'ບໍ່ເຫັນໃບໜ້າ / No face seen', 'ລອງໃໝ່ ຫຼື ໃຊ້ລະຫັດ PIN / Try again or use PIN');
 
   // step 2: liveness — a random challenge, so a photo or a recorded video cannot pass
   const ch = CHALLENGES[Math.floor(Math.random() * CHALLENGES.length)];
@@ -680,7 +686,7 @@ async function runFace(){
     if (det && faceBigEnough(det) && ch.test(det.landmarks, { yaw: base, mouth: baseMouth / samples.length })) { passed = true; break; }
     await sleep(50);
   }
-  if (!passed) return faceFail(token, 'ກວດບໍ່ຜ່ານ', ch.fail + ' ຫຼື ໃຊ້ລະຫັດ PIN');
+  if (!passed) return faceFail(token, 'ກວດບໍ່ຜ່ານ / Check failed', ch.fail + ' ຫຼື ໃຊ້ລະຫັດ PIN');
 
   // step 3: send to the sheet
   const mean = new Array(128).fill(0);
@@ -693,9 +699,9 @@ async function runFace(){
 function dist2(a, b){ return Math.hypot(a.x - b.x, a.y - b.y); }
 function mouthOpen(landmarks){ const p = landmarks.positions; return dist2(p[62], p[66]) / dist2(p[27], p[8]); }
 const CHALLENGES = [
-  { msg: 'ຄ່ອຍໆ ຫັນໜ້າໄປທາງຂ້າງ', sub: 'Slowly turn your head to one side', fail: 'ຫັນໜ້າຊ້າໆ ແລ້ວລອງໃໝ່',
+  { msg: 'ຄ່ອຍໆ ຫັນໜ້າໄປທາງຂ້າງ', sub: 'Slowly turn your head to one side', fail: 'ຫັນໜ້າຊ້າໆ ແລ້ວລອງໃໝ່ / Turn slowly and try again',
     test: (lm, b) => Math.abs(yawOf(lm) - b.yaw) > TURN_NEEDED },
-  { msg: 'ອ້າປາກກວ້າງໆ', sub: 'Open your mouth wide', fail: 'ອ້າປາກໃຫ້ກວ້າງ ແລ້ວລອງໃໝ່',
+  { msg: 'ອ້າປາກກວ້າງໆ', sub: 'Open your mouth wide', fail: 'ອ້າປາກໃຫ້ກວ້າງ ແລ້ວລອງໃໝ່ / Open your mouth wider and try again',
     test: (lm, b) => mouthOpen(lm) > b.mouth + 0.08 }
 ];
 function faceFail(token, msg, sub){
@@ -710,7 +716,7 @@ const KEYS = ['1','2','3','4','5','6','7','8','9','del','0','go'];
 KEYS.forEach(k => {
   const b = document.createElement('button');
   b.className = 'k' + (k === 'del' ? ' small' : '') + (k === 'go' ? ' go' : '');
-  b.textContent = k === 'del' ? 'ລຶບ' : k === 'go' ? 'ຕໍ່ໄປ' : k;
+  b.textContent = k === 'del' ? 'ລຶບ / Delete' : k === 'go' ? 'ຕໍ່ໄປ / Next' : k;
   if (k === 'go') b.id = 'goKey';
   b.onclick = () => press(k);
   $('keys').appendChild(b);
@@ -720,9 +726,9 @@ function startPin(){
   runToken++;
   mode = 'pin';
   padState = { kind: 'pin', step: faceId ? 'pin' : 'id', id: faceId || '', pin: '' };
-  $('padTitle').textContent = (action === 'In' ? 'ເຂົ້າວຽກ' : action === 'Out' ? 'ອອກວຽກ' : 'ຂໍລາພັກ') + ' · PIN';
+  $('padTitle').textContent = (action === 'In' ? 'ເຂົ້າວຽກ / Clock in' : action === 'Out' ? 'ອອກວຽກ / Clock out' : 'ຂໍລາພັກ / Leave request') + ' · PIN';
   $('padTitle').className = (action === 'In' ? 'in' : action === 'Out' ? 'out' : 'mgr');
-  $('hint').textContent = action === 'Leave' ? 'ຢືນຢັນຕົວຕົນກ່ອນຂໍລາພັກ' : 'ຈະຖ່າຍຮູບໄວ້ເປັນຫຼັກຖານ';
+  $('hint').textContent = action === 'Leave' ? 'ຢືນຢັນຕົວຕົນກ່ອນຂໍລາພັກ / Verify yourself before requesting leave' : 'ຈະຖ່າຍຮູບໄວ້ເປັນຫຼັກຖານ / A photo is taken as proof';
   show('pad'); renderPad(); resetIdle();
   openStream();   // keep camera on so a photo is taken with the PIN
 }
@@ -731,25 +737,25 @@ function startManager(){
   collapseDetail();
   mode = 'mgr';
   padState = { kind: 'mgr', value: '' };
-  $('padTitle').textContent = 'ລົງທະບຽນໃບໜ້າ';
+  $('padTitle').textContent = 'ລົງທະບຽນໃບໜ້າ / Register face';
   $('padTitle').className = 'mgr';
   $('hint').textContent = '';
   show('pad'); renderPad(); resetIdle();
 }
 function renderPad(){
   const s = padState; if (!s) return;
-  let prompt = '', shown = '', ready = false, go = 'ຕໍ່ໄປ';
+  let prompt = '', shown = '', ready = false, go = 'ຕໍ່ໄປ / Next';
   if (s.kind === 'pin') {
-    if (s.step === 'id') { prompt = 'ໃສ່ລະຫັດພະນັກງານ'; shown = s.id; ready = s.id.length > 0; }
-    else { prompt = 'ໃສ່ລະຫັດ PIN'; shown = '•'.repeat(s.pin.length); ready = s.pin.length >= 4; go = 'ຢືນຢັນ'; }
+    if (s.step === 'id') { prompt = 'ໃສ່ລະຫັດພະນັກງານ / Enter staff ID'; shown = s.id; ready = s.id.length > 0; }
+    else { prompt = 'ໃສ່ລະຫັດ PIN / Enter PIN'; shown = '•'.repeat(s.pin.length); ready = s.pin.length >= 4; go = 'ຢືນຢັນ / Confirm'; }
   } else if (s.kind === 'apprPin') {
-    prompt = 'ໃສ່ PIN ຜູ້ອະນຸມັດ'; shown = '•'.repeat(s.value.length); ready = s.value.length >= 4; go = 'ເຂົ້າ';
+    prompt = 'ໃສ່ PIN ຜູ້ອະນຸມັດ / Enter approver PIN'; shown = '•'.repeat(s.value.length); ready = s.value.length >= 4; go = 'ເຂົ້າ / Enter';
   } else if (s.kind === 'mgr') {
-    prompt = 'ໃສ່ລະຫັດຜູ້ຈັດການ'; shown = '•'.repeat(s.value.length); ready = s.value.length >= 4;
+    prompt = 'ໃສ່ລະຫັດຜູ້ຈັດການ / Enter manager code'; shown = '•'.repeat(s.value.length); ready = s.value.length >= 4;
   } else if (s.kind === 'faceId') {
-    prompt = 'ໃສ່ລະຫັດພະນັກງານ'; shown = s.value; ready = s.value.length > 0;
+    prompt = 'ໃສ່ລະຫັດພະນັກງານ / Enter staff ID'; shown = s.value; ready = s.value.length > 0;
   } else if (s.kind === 'enrollId' || s.kind === 'manualId') {
-    prompt = s.kind === 'enrollId' ? 'ລະຫັດພະນັກງານທີ່ຈະລົງທະບຽນໜ້າ' : 'ລະຫັດພະນັກງານ'; shown = s.value; ready = s.value.length > 0;
+    prompt = s.kind === 'enrollId' ? 'ລະຫັດພະນັກງານທີ່ຈະລົງທະບຽນໜ້າ / Staff ID to register' : 'ລະຫັດພະນັກງານ / Staff ID'; shown = s.value; ready = s.value.length > 0;
   }
   const showLv = action === 'Leave' && (s.kind === 'faceId' || s.kind === 'pin');
   $('padApprove').classList.toggle('hidden', !showLv);
@@ -818,12 +824,12 @@ function showMgrMenu(){
   runToken++; stopCamera(); busy = false;
   mode = 'mgr'; padState = null;
   const done = staffCache.filter(s => s.enrolled).length;
-  $('mgrInfo').textContent = 'ລົງທະບຽນໜ້າແລ້ວ ' + done + ' / ' + staffCache.length + ' ຄົນ';
+  $('mgrInfo').textContent = 'ລົງທະບຽນໜ້າແລ້ວ / Faces registered: ' + done + ' of ' + staffCache.length;
   show('mgrMenu'); resetIdle(90000);
 }
 function mgrPick(kind){
   padState = { kind: kind, value: '' };
-  $('padTitle').textContent = kind === 'enrollId' ? 'ລົງທະບຽນໃບໜ້າ' : 'ບັນທຶກເຂົ້າ/ອອກແທນ';
+  $('padTitle').textContent = kind === 'enrollId' ? 'ລົງທະບຽນໃບໜ້າ / Register face' : 'ບັນທຶກເຂົ້າ/ອອກແທນ / Clock in/out for someone';
   $('padTitle').className = 'mgr'; $('hint').textContent = '';
   show('pad'); renderPad(); resetIdle();
 }
@@ -839,17 +845,17 @@ function showChoice(title, sub, buttons){
 let enrollPerson = null, enrollSamples = [];
 async function startEnroll(id){
   const person = staffCache.find(s => s.id === id);
-  if (!person) { $('hint').textContent = 'ບໍ່ພົບລະຫັດພະນັກງານນີ້'; padState.value = ''; renderPad(); return; }
-  if (!modelsReady) { $('hint').textContent = 'ລະບົບສະແກນໜ້າຍັງບໍ່ພ້ອມ'; return; }
+  if (!person) { $('hint').textContent = 'ບໍ່ພົບລະຫັດພະນັກງານນີ້ / Staff ID not found'; padState.value = ''; renderPad(); return; }
+  if (!modelsReady) { $('hint').textContent = 'ລະບົບສະແກນໜ້າຍັງບໍ່ພ້ອມ / Face scan is not ready'; return; }
   enrollPerson = person; enrollSamples = [];
   mode = 'enroll';
-  $('camTitle').textContent = 'ລົງທະບຽນ: ' + person.name;
+  $('camTitle').textContent = 'ລົງທະບຽນ / Register: ' + person.name;
   $('camTitle').className = 'mgr';
   $('camButtons').classList.add('hidden');
   show('cam'); resetIdle(90000);
   const token = ++runToken;
-  camText('ກຳລັງເປີດກ້ອງ…');
-  if (!(await startCamera())) { camText('ເປີດກ້ອງບໍ່ໄດ້', 'ອະນຸຍາດໃຫ້ໃຊ້ກ້ອງໃນ browser'); return; }
+  camText('ກຳລັງເປີດກ້ອງ… / Opening camera…');
+  if (!(await startCamera())) { camText('ເປີດກ້ອງບໍ່ໄດ້ / Camera failed', 'ອະນຸຍາດໃຫ້ໃຊ້ກ້ອງໃນ browser / Allow the camera in the browser'); return; }
   const v = $('video'); const deadline = Date.now() + 60000;
   let side = 0;
   const poses = [
@@ -862,7 +868,7 @@ async function startEnroll(id){
     const pose = poses[pi]; let got = 0;
     while (got < pose.n && Date.now() < deadline) {
       if (token !== runToken) return;
-      camText(pose.msg + ' · ' + enrollSamples.length + ' / ' + total, pose.sub);
+      camText(pose.msg + ' · ' + enrollSamples.length + '/' + total, pose.sub);
       const det = await detectFull(v);
       if (token !== runToken) return;
       const good = det && faceBigEnough(det) && pose.ok(yawOf(det.landmarks));
@@ -874,47 +880,47 @@ async function startEnroll(id){
         await sleep(300);
       } else {
         $('oval').classList.remove('good');
-        if (det && !faceBigEnough(det)) camText('ເຂົ້າມາໃກ້ກ້ອງອີກໜ້ອຍ · ' + enrollSamples.length + ' / ' + total, 'Come a little closer');
+        if (det && !faceBigEnough(det)) camText('ເຂົ້າມາໃກ້ກ້ອງອີກໜ້ອຍ · ' + enrollSamples.length + '/' + total, 'Come a little closer');
         await sleep(80);
       }
     }
   }
-  if (enrollSamples.length < total) { camText('ບັນທຶກບໍ່ສຳເລັດ', 'ລອງໃໝ່ໃນບ່ອນທີ່ມີແສງດີ'); $('camButtons').classList.add('hidden'); return; }
+  if (enrollSamples.length < total) { camText('ບັນທຶກບໍ່ສຳເລັດ / Not saved', 'ລອງໃໝ່ໃນບ່ອນທີ່ມີແສງດີ / Try again in good light'); $('camButtons').classList.add('hidden'); return; }
   stopCamera();
   sendEnroll(false);
 }
 async function sendEnroll(force){
-  busy = true; result('busy', 'ກຳລັງບັນທຶກ…', '', '');
+  busy = true; result('busy', 'ກຳລັງບັນທຶກ… / Saving…', '', '');
   const r = await api({ op: 'enroll', manager: managerCode, id: enrollPerson.id, descriptors: enrollSamples, force: force });
   busy = false;
   if (r && r.ok) {
     enrollPerson.enrolled = true;
-    result('good-mgr', 'ບັນທຶກໜ້າ ' + r.name + ' ແລ້ວ', '', 'ແຕະໜ້າຈໍເພື່ອກັບໄປເມນູ', r.warned ? 'ຖ້າສະແກນບໍ່ຜ່ານ ໃຫ້ໃຊ້ PIN' : '');
+    result('good-mgr', 'ບັນທຶກໜ້າ ' + r.name + ' ແລ້ວ / Face saved', '', 'ແຕະໜ້າຈໍເພື່ອກັບໄປເມນູ / Tap the screen to go back', r.warned ? 'ຖ້າສະແກນບໍ່ຜ່ານ ໃຫ້ໃຊ້ PIN / If the scan fails, use PIN' : '');
     resetIdle(20000); backToMenuAfter();
   } else if (r && r.code === 'similar') {
-    showChoice('ໜ້າຄ້າຍກັບ ' + r.name, 'ຖ້າແນ່ໃຈວ່າແມ່ນ ' + enrollPerson.name + ' ແທ້ ກົດ "ບັນທຶກຕໍ່". ຖ້າສະແກນບໍ່ຜ່ານໃນພາຍຫຼັງ ລະບົບຈະຂໍ PIN.', [
-      ['ບັນທຶກຕໍ່', () => sendEnroll(true), true],
-      ['ລອງໃໝ່', () => startEnroll(enrollPerson.id)],
-      ['ຍົກເລີກ', showMgrMenu]
+    showChoice('ໜ້າຄ້າຍກັບ / Looks like ' + r.name, 'ຖ້າແນ່ໃຈວ່າແມ່ນ ' + enrollPerson.name + ' ແທ້ ກົດ "ບັນທຶກຕໍ່ / Save anyway". ຖ້າສະແກນບໍ່ຜ່ານໃນພາຍຫຼັງ ລະບົບຈະຂໍ PIN. / If you are sure this is ' + enrollPerson.name + ', tap "Save anyway". If the scan fails later, PIN will be asked.', [
+      ['ບັນທຶກຕໍ່ / Save anyway', () => sendEnroll(true), true],
+      ['ລອງໃໝ່ / Try again', () => startEnroll(enrollPerson.id)],
+      ['ຍົກເລີກ / Cancel', showMgrMenu]
     ]);
   } else { showError(r); backToMenuAfter(); }
 }
 
 // ---------------- manager clocks someone in or out ----------------
 let manPerson = null, manAction = '', manReason = '';
-const MAN_REASONS = ['ລືມສະແກນ', 'ສະແກນໜ້າບໍ່ໄດ້', 'ເຮັດວຽກນອກສະຖານທີ່', 'ອື່ນໆ'];
+const MAN_REASONS = ['ລືມສະແກນ / Forgot to scan', 'ສະແກນໜ້າບໍ່ໄດ້ / Face scan failed', 'ເຮັດວຽກນອກສະຖານທີ່ / Working off-site', 'ອື່ນໆ / Other'];
 function openManual(id){
   const person = staffCache.find(s => s.id === id);
-  if (!person) { $('hint').textContent = 'ບໍ່ພົບລະຫັດພະນັກງານນີ້'; padState.value = ''; renderPad(); return; }
+  if (!person) { $('hint').textContent = 'ບໍ່ພົບລະຫັດພະນັກງານນີ້ / Staff ID not found'; padState.value = ''; renderPad(); return; }
   manPerson = person; manAction = ''; manReason = '';
   mode = 'manual';
-  $('manTitle').textContent = 'ບັນທຶກແທນ · ' + person.name;
+  $('manTitle').textContent = 'ບັນທຶກແທນ / Record for · ' + person.name;
   const pick = (boxId, items, onPick) => {
     const box = $(boxId); box.innerHTML = '';
     items.forEach(([val, lbl]) => { const b = document.createElement('button'); b.textContent = lbl;
       b.onclick = () => { onPick(val); box.querySelectorAll('button').forEach(x => x.classList.toggle('sel', x === b)); checkManual(); }; box.appendChild(b); });
   };
-  pick('manAction', [['In', 'ເຂົ້າວຽກ'], ['Out', 'ອອກວຽກ']], v => manAction = v);
+  pick('manAction', [['In', 'ເຂົ້າວຽກ / Clock in'], ['Out', 'ອອກວຽກ / Clock out']], v => manAction = v);
   pick('manReason', MAN_REASONS.map(x => [x, x]), v => manReason = v);
   const d = new Date(); $('manTime').value = pad2(d.getHours()) + ':' + pad2(d.getMinutes()); $('manTime').onchange = checkManual;
   show('manualForm'); checkManual(); resetIdle(120000);
@@ -922,18 +928,18 @@ function openManual(id){
 function checkManual(){ resetIdle(120000); $('manSend').disabled = !manAction || !manReason || !$('manTime').value; }
 async function sendManual(){
   if (busy || $('manSend').disabled) return; busy = true;
-  result('busy', 'ກຳລັງບັນທຶກ…', '', '');
+  result('busy', 'ກຳລັງບັນທຶກ… / Saving…', '', '');
   const r = await api({ op: 'manual', manager: managerCode, id: manPerson.id, action: manAction, time: $('manTime').value, reason: manReason });
   busy = false;
   if (r && r.ok) {
-    const tag = r.action === 'In' ? lateTag(r.minutes) : ('ເຮັດວຽກ ' + Math.floor((r.worked || 0) / 60) + ' ຊົ່ວໂມງ ' + ((r.worked || 0) % 60) + ' ນາທີ');
-    result(r.action === 'In' ? 'good-in' : 'good-out', r.name, r.time, 'ບັນທຶກ' + (r.action === 'In' ? 'ເຂົ້າ' : 'ອອກ') + 'ວຽກແທນແລ້ວ', tag);
+    const tag = r.action === 'In' ? lateTag(r.minutes) : ('ເຮັດວຽກ / Worked ' + Math.floor((r.worked || 0) / 60) + ' ຊມ/h ' + ((r.worked || 0) % 60) + ' ນທ/min');
+    result(r.action === 'In' ? 'good-in' : 'good-out', r.name, r.time, (r.action === 'In' ? 'ບັນທຶກເຂົ້າວຽກແທນແລ້ວ / Clocked in for them' : 'ບັນທຶກອອກວຽກແທນແລ້ວ / Clocked out for them'), tag);
     resetIdle(20000); backToMenuAfter(); setTimeout(loadSummary, 1500);
   } else { showError(r); backToMenuAfter(); }
 }
 
 // ---------------- leave request ----------------
-const LEAVE_TYPES = [['Annual leave','ລາພັກປະຈຳປີ'],['Sick leave','ລາປ່ວຍ'],['Emergency leave','ລາສຸກເສີນ / ອຸບັດຕິເຫດ'],['Personal leave','ລາກິດ'],['Unpaid leave','ລາບໍ່ໄດ້ເງິນເດືອນ'],['Other','ອື່ນໆ']];
+const LEAVE_TYPES = [['Annual leave','ລາພັກປະຈຳປີ / Annual'],['Sick leave','ລາປ່ວຍ / Sick'],['Emergency leave','ລາສຸກເສີນ / ອຸບັດຕິເຫດ / Emergency'],['Personal leave','ລາກິດ / Personal'],['Unpaid leave','ລາບໍ່ໄດ້ເງິນເດືອນ / Unpaid'],['Other','ອື່ນໆ / Other']];
 let leaveToken = '', leaveType = '';
 function ymd(d){ return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
 function startLeave(){
@@ -947,17 +953,17 @@ function renderUpcoming(){
   const list = (lastSummary && lastSummary.upcoming) || [];
   const dm = s => { const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? m[3] + '/' + m[2] : s; };
   const item = p => '<div class="lvItem' + (p.now ? ' now' : '') + '"><div><b>' + esc(p.name) + '</b> <span style="color:var(--muted)">#' + esc(p.id) + '</span><small>' +
-    esc([p.team, LEAVE_LAO[p.type] || p.type].filter(Boolean).join(' · ')) + '</small></div><div class="when">' + dm(p.from) + (p.to !== p.from ? ' → ' + dm(p.to) : '') + '<small>' + p.days + ' ມື້' + (p.time ? ' · ເລີ່ມ ' + p.time : '') + '</small></div></div>';
+    esc([p.team, LEAVE_LAO[p.type] || p.type].filter(Boolean).join(' · ')) + '</small></div><div class="when">' + dm(p.from) + (p.to !== p.from ? ' → ' + dm(p.to) : '') + '<small>' + p.days + ' ມື້/days' + (p.time ? ' · ເລີ່ມ / starts ' + p.time : '') + '</small></div></div>';
   const now = list.filter(p => p.now), later = list.filter(p => !p.now);
-  $('lvSide').innerHTML = '<h3>ການລາພັກທີ່ອະນຸມັດແລ້ວ</h3><div class="sub">' + esc(BRANCH) + '</div>' +
-    '<h4>ກຳລັງລາພັກຢູ່ (' + now.length + ')</h4>' + (now.length ? now.map(item).join('') : '<div class="lvNone">ບໍ່ມີ</div>') +
-    '<h4>ກຳລັງຈະລາພັກ (' + later.length + ')</h4>' + (later.length ? later.map(item).join('') : '<div class="lvNone">ບໍ່ມີ</div>');
+  $('lvSide').innerHTML = '<h3>ການລາພັກທີ່ອະນຸມັດແລ້ວ / Approved leave</h3><div class="sub">' + esc(BRANCH) + '</div>' +
+    '<h4>ກຳລັງລາພັກຢູ່ / On leave now (' + now.length + ')</h4>' + (now.length ? now.map(item).join('') : '<div class="lvNone">ບໍ່ມີ / None</div>') +
+    '<h4>ກຳລັງຈະລາພັກ / Coming up (' + later.length + ')</h4>' + (later.length ? later.map(item).join('') : '<div class="lvNone">ບໍ່ມີ / None</div>');
 }
-const LEAVE_LAO = { 'Annual leave': 'ລາພັກປະຈຳປີ', 'Sick leave': 'ລາປ່ວຍ', 'Emergency leave': 'ລາສຸກເສີນ / ອຸບັດຕິເຫດ', 'Personal leave': 'ລາກິດ', 'Unpaid leave': 'ລາບໍ່ໄດ້ເງິນເດືອນ', 'Other': 'ອື່ນໆ' };
+const LEAVE_LAO = { 'Annual leave': 'ລາພັກປະຈຳປີ / Annual', 'Sick leave': 'ລາປ່ວຍ / Sick', 'Emergency leave': 'ລາສຸກເສີນ / ອຸບັດຕິເຫດ / Emergency', 'Personal leave': 'ລາກິດ / Personal', 'Unpaid leave': 'ລາບໍ່ໄດ້ເງິນເດືອນ / Unpaid', 'Other': 'ອື່ນໆ / Other' };
 async function identify(body){
   if (busy) return; busy = true;
   clearTimeout(idleTimer);
-  result('busy', 'ກຳລັງກວດສອບ…', '', '');
+  result('busy', 'ກຳລັງກວດສອບ… / Checking…', '', '');
   const r = await api(body);
   busy = false;
   if (r && r.ok) openLeaveForm(r); else showError(r);
@@ -965,7 +971,7 @@ async function identify(body){
 function openLeaveForm(r){
   leaveToken = r.token; leaveType = '';
   mode = 'leaveForm';
-  $('leaveTitle').textContent = 'ຂໍລາພັກ · ' + r.name;
+  $('leaveTitle').textContent = 'ຂໍລາພັກ / Leave request · ' + r.name;
   const box = $('leaveTypes'); box.innerHTML = '';
   LEAVE_TYPES.forEach(([val, lbl]) => {
     const b = document.createElement('button'); b.textContent = lbl;
@@ -983,17 +989,17 @@ function checkLeave(){
   if (f && t && t < f) $('lvTo').value = f;
   const tt = $('lvTo').value;
   const days = f && tt ? Math.round((new Date(tt) - new Date(f)) / 86400000) + 1 : 0;
-  $('lvDays').textContent = days > 0 ? 'ລວມ ' + days + ' ມື້' : '';
+  $('lvDays').textContent = days > 0 ? 'ລວມ / Total ' + days + ' ມື້ / days' : '';
   $('lvSend').disabled = !leaveType || days < 1;
 }
 async function sendLeave(){
   if (busy || $('lvSend').disabled) return; busy = true;
   clearTimeout(idleTimer);
-  result('busy', 'ກຳລັງສົ່ງ…', '', '');
+  result('busy', 'ກຳລັງສົ່ງ… / Sending…', '', '');
   const r = await api({ op: 'leave', token: leaveToken, type: leaveType, from: $('lvFrom').value, to: $('lvTo').value, reason: $('lvReason').value });
   busy = false;
   if (r && r.ok) {
-    result('good-mgr', 'ສົ່ງຄຳຂໍລາພັກແລ້ວ', '', r.from + ' → ' + r.to + ' · ' + r.days + ' ມື້', r.next ? 'ລໍຖ້າ ' + r.next + ' ອະນຸມັດ' : 'ລໍຖ້າອະນຸມັດ');
+    result('good-mgr', 'ສົ່ງຄຳຂໍລາພັກແລ້ວ / Leave request sent', '', r.from + ' → ' + r.to + ' · ' + r.days + ' ມື້ / days', r.next ? 'ລໍຖ້າ ' + r.next + ' ອະນຸມັດ / Waiting for ' + r.next : 'ລໍຖ້າອະນຸມັດ / Waiting for approval');
     resetIdle(7000);
   } else showError(r);
 }
@@ -1006,15 +1012,15 @@ function startApprove(){
   runToken++; stopCamera();
   mode = 'mgr';
   padState = { kind: 'apprPin', value: '' };
-  $('padTitle').textContent = 'ອະນຸມັດການລາພັກ';
+  $('padTitle').textContent = 'ອະນຸມັດການລາພັກ / Approve leave';
   $('padTitle').className = 'mgr';
-  $('hint').textContent = 'ຫົວໜ້າທີມ · ຜູ້ຈັດການ · ຜູ້ຈັດການທົ່ວໄປ';
+  $('hint').textContent = 'ຫົວໜ້າທີມ · ຜູ້ຈັດການ · ຜູ້ຈັດການທົ່ວໄປ / Team head · Manager · General manager';
   show('pad'); renderPad(); resetIdle();
 }
 async function apprLogin(pin){
   if (busy) return; busy = true;
   clearTimeout(idleTimer);
-  result('busy', 'ກຳລັງກວດສອບ…', '', '');
+  result('busy', 'ກຳລັງກວດສອບ… / Checking…', '', '');
   const r = await api({ op: 'apprLogin', pin: pin });
   busy = false;
   if (!r || !r.ok) { showError(r); return; }
@@ -1025,42 +1031,42 @@ let pendingList = [];
 async function loadPending(){
   if (busy) return; busy = true;
   clearTimeout(idleTimer);
-  result('busy', 'ກຳລັງໂຫຼດ…', '', '');
+  result('busy', 'ກຳລັງໂຫຼດ… / Loading…', '', '');
   const r = await api({ op: 'pendingLeave', token: apprToken });
   busy = false;
-  if (r && r.code === 'login') { startApprove(); $('hint').textContent = 'ໝົດເວລາ ກະລຸນາໃສ່ PIN ໃໝ່'; return; }
+  if (r && r.code === 'login') { startApprove(); $('hint').textContent = 'ໝົດເວລາ ກະລຸນາໃສ່ PIN ໃໝ່ / Timed out, enter PIN again'; return; }
   if (!r || !r.ok) { showError(r); return; }
   mode = 'mgr'; padState = null;
   pendingList = r.list || [];
   renderPending();
   show('approve'); resetIdle(180000);
 }
-const TYPE_LAO = { 'Annual leave': 'ລາພັກປະຈຳປີ', 'Sick leave': 'ລາປ່ວຍ', 'Emergency leave': 'ລາສຸກເສີນ / ອຸບັດຕິເຫດ', 'Personal leave': 'ລາກິດ', 'Unpaid leave': 'ລາບໍ່ໄດ້ເງິນເດືອນ', 'Other': 'ອື່ນໆ' };
+const TYPE_LAO = { 'Annual leave': 'ລາພັກປະຈຳປີ / Annual', 'Sick leave': 'ລາປ່ວຍ / Sick', 'Emergency leave': 'ລາສຸກເສີນ / ອຸບັດຕິເຫດ / Emergency', 'Personal leave': 'ລາກິດ / Personal', 'Unpaid leave': 'ລາບໍ່ໄດ້ເງິນເດືອນ / Unpaid', 'Other': 'ອື່ນໆ / Other' };
 function dmy(s){ const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? m[3] + '/' + m[2] + '/' + m[1] : s; }
 function renderPending(){
   const left = pendingList.filter(p => !p.done && p.mine).length;
-  $('apprTitle').textContent = apprName + ' · ລໍຖ້າທ່ານ (' + left + ')';
+  $('apprTitle').textContent = apprName + ' · ລໍຖ້າທ່ານ / For you (' + left + ')';
   const box = $('apprList'); box.innerHTML = '';
-  if (!pendingList.length) { box.innerHTML = '<div class="apprEmpty">ບໍ່ມີຄຳຂໍລາພັກທີ່ລໍຖ້າທ່ານ ✓</div>'; return; }
+  if (!pendingList.length) { box.innerHTML = '<div class="apprEmpty">ບໍ່ມີຄຳຂໍລາພັກທີ່ລໍຖ້າທ່ານ ✓ / Nothing waiting for you ✓</div>'; return; }
   pendingList.forEach(p => {
     const c = document.createElement('div'); c.className = 'apprCard' + (p.done ? ' done' : '');
     const info = document.createElement('div'); info.className = 'info';
     const add = (cls, txt) => { const d = document.createElement('div'); d.className = cls; d.textContent = txt; info.appendChild(d); return d; };
     const nm = add('nm', p.name + ' '); const sp = document.createElement('span'); sp.textContent = '#' + p.id; nm.appendChild(sp);
-    add('meta', [p.team, p.branch, p.at ? 'ຂໍເມື່ອ ' + p.at : ''].filter(Boolean).join(' · '));
-    add('dt', (TYPE_LAO[p.type] || p.type) + ' · ' + dmy(p.from) + (p.to && p.to !== p.from ? ' → ' + dmy(p.to) : '') + (p.days ? ' · ' + p.days + ' ມື້' : '') + (p.time ? ' · ເລີ່ມ ' + p.time : ''));
-    if (p.note) add('note', 'ເຫດຜົນ: ' + p.note);
+    add('meta', [p.team, p.branch, p.at ? 'ຂໍເມື່ອ / Asked ' + p.at : ''].filter(Boolean).join(' · '));
+    add('dt', (TYPE_LAO[p.type] || p.type) + ' · ' + dmy(p.from) + (p.to && p.to !== p.from ? ' → ' + dmy(p.to) : '') + (p.days ? ' · ' + p.days + ' ມື້/days' : '') + (p.time ? ' · ເລີ່ມ / starts ' + p.time : ''));
+    if (p.note) add('note', 'ເຫດຜົນ / Reason: ' + p.note);
     if (p.log) add('log', p.log);
-    if (!p.mine && !p.done) add('wait', 'ຍັງລໍ ' + p.waiting + ' (' + p.waitingRole + ') · ກົດອະນຸມັດເພື່ອຂ້າມຂັ້ນ');
+    if (!p.mine && !p.done) add('wait', 'ຍັງລໍ / Waiting for ' + p.waiting + ' (' + p.waitingRole + ') · ກົດອະນຸມັດເພື່ອຂ້າມຂັ້ນ / Approve to skip');
     c.appendChild(info);
     const acts = document.createElement('div'); acts.className = 'acts';
     if (p.done) {
       const d = document.createElement('div'); d.className = 'fwd';
-      d.textContent = p.done === 'No' ? '✕ ບໍ່ອະນຸມັດ' : (p.next ? '✓ ສົ່ງຕໍ່ໃຫ້ ' + p.next : '✓ ອະນຸມັດສຳເລັດ');
+      d.textContent = p.done === 'No' ? '✕ ບໍ່ອະນຸມັດ / Rejected' : (p.next ? '✓ ສົ່ງຕໍ່ / Sent to ' + p.next : '✓ ອະນຸມັດສຳເລັດ / Approved');
       acts.appendChild(d);
     } else {
-      const y = document.createElement('button'); y.className = 'yes'; y.textContent = p.mine ? 'ອະນຸມັດ' : 'ອະນຸມັດເລີຍ'; y.onclick = () => decide(p, 'Yes');
-      const n = document.createElement('button'); n.className = 'no'; n.textContent = 'ບໍ່ອະນຸມັດ'; n.onclick = () => decide(p, 'No');
+      const y = document.createElement('button'); y.className = 'yes'; y.textContent = p.mine ? 'ອະນຸມັດ / Approve' : 'ອະນຸມັດເລີຍ / Approve now'; y.onclick = () => decide(p, 'Yes');
+      const n = document.createElement('button'); n.className = 'no'; n.textContent = 'ບໍ່ອະນຸມັດ / Reject'; n.onclick = () => decide(p, 'No');
       acts.appendChild(y); acts.appendChild(n);
     }
     c.appendChild(acts);
@@ -1073,13 +1079,13 @@ async function decide(p, decision){
   const r = await api({ op: 'decideLeave', token: apprToken, row: p.row, id: p.id, decision: decision });
   busy = false;
   if (r && r.ok) { p.done = decision; p.next = r.next || ''; renderPending(); setTimeout(loadSummary, 1500); return; }
-  if (r && r.code === 'login') { startApprove(); $('hint').textContent = 'ໝົດເວລາ ກະລຸນາໃສ່ PIN ໃໝ່'; return; }
+  if (r && r.code === 'login') { startApprove(); $('hint').textContent = 'ໝົດເວລາ ກະລຸນາໃສ່ PIN ໃໝ່ / Timed out, enter PIN again'; return; }
   if (r && (r.code === 'decided' || r.code === 'notyours')) { loadPending(); return; }
   showError(r); afterResult = () => { renderPending(); show('approve'); resetIdle(180000); };
 }
 
 // ---------------- urgent leave entered by an approver ----------------
-const UG_TYPES = [['Emergency leave','ລາສຸກເສີນ / ອຸບັດຕິເຫດ'],['Sick leave','ລາປ່ວຍ'],['Personal leave','ລາກິດ'],['Unpaid leave','ລາບໍ່ໄດ້ເງິນເດືອນ'],['Annual leave','ລາພັກປະຈຳປີ'],['Other','ອື່ນໆ']];
+const UG_TYPES = [['Emergency leave','ລາສຸກເສີນ / ອຸບັດຕິເຫດ / Emergency'],['Sick leave','ລາປ່ວຍ / Sick'],['Personal leave','ລາກິດ / Personal'],['Unpaid leave','ລາບໍ່ໄດ້ເງິນເດືອນ / Unpaid'],['Annual leave','ລາພັກປະຈຳປີ / Annual'],['Other','ອື່ນໆ / Other']];
 let ugType = 'Emergency leave', ugPerson = null, ugTimer = null;
 function openUrgent(){
   if (busy) return;
@@ -1095,7 +1101,7 @@ function openUrgent(){
   ['ugFrom','ugTo'].forEach(k => { $(k).min = ymd(min); $(k).max = ymd(max); $(k).value = ymd(now); $(k).onchange = checkUrgent; });
   $('ugTime').onchange = checkUrgent; $('ugTime').oninput = checkUrgent;
   const instant = apprRoleEn === 'General manager' || apprRoleEn === 'Owner';
-  $('ugSend').textContent = instant ? 'ບັນທຶກ ແລະ ອະນຸມັດທັນທີ' : 'ບັນທຶກ ແລະ ສົ່ງຕໍ່ໃຫ້ຂັ້ນຕໍ່ໄປ';
+  $('ugSend').textContent = instant ? 'ບັນທຶກ ແລະ ອະນຸມັດທັນທີ / Save and approve' : 'ບັນທຶກ ແລະ ສົ່ງຕໍ່ໃຫ້ຂັ້ນຕໍ່ໄປ / Save and send on';
   show('urgentForm'); checkUrgent(); resetIdle(180000);
   setTimeout(() => $('ugId').focus(), 100);
 }
@@ -1107,11 +1113,11 @@ $('ugId').addEventListener('input', () => {
   const id = $('ugId').value;
   if (!id) return;
   ugTimer = setTimeout(async () => {
-    $('ugWho').className = 'ugWho'; $('ugWho').textContent = 'ກຳລັງຊອກ…';
+    $('ugWho').className = 'ugWho'; $('ugWho').textContent = 'ກຳລັງຊອກ… / Searching…';
     const r = await api({ op: 'whois', token: apprToken, id: id });
     if (id !== $('ugId').value) return;
     if (r && r.ok) { ugPerson = r; $('ugWho').textContent = r.name + ' · ' + [r.team, r.branch].filter(Boolean).join(' · '); }
-    else { $('ugWho').className = 'ugWho bad'; $('ugWho').textContent = r && r.code === 'login' ? 'ໝົດເວລາ ກະລຸນາເຂົ້າໃໝ່' : 'ບໍ່ພົບລະຫັດນີ້'; }
+    else { $('ugWho').className = 'ugWho bad'; $('ugWho').textContent = r && r.code === 'login' ? 'ໝົດເວລາ ກະລຸນາເຂົ້າໃໝ່ / Timed out, log in again' : 'ບໍ່ພົບລະຫັດນີ້ / ID not found'; }
     checkUrgent();
   }, 450);
 });
@@ -1123,23 +1129,23 @@ function checkUrgent(){
   const tt = $('ugTo').value;
   const days = f && tt ? Math.round((new Date(tt) - new Date(f)) / 86400000) + 1 : 0;
   const tm = $('ugTime').value;
-  $('ugDays').textContent = days > 0 ? 'ລວມ ' + days + ' ມື້' + (tm ? ' · ເລີ່ມລາເວລາ ' + tm + ' ຂອງວັນທີ ' + dmy(f) : ' · ລາທັງມື້') : '';
+  $('ugDays').textContent = days > 0 ? 'ລວມ / Total ' + days + ' ມື້ / days' + (tm ? ' · ເລີ່ມ / Starts ' + tm + ' (' + dmy(f) + ')' : ' · ລາທັງມື້ / All day') : '';
   $('ugSend').disabled = !ugPerson || !ugType || days < 1;
 }
 async function sendUrgent(){
   if (busy || $('ugSend').disabled) return; busy = true;
   clearTimeout(idleTimer);
-  result('busy', 'ກຳລັງບັນທຶກ…', '', '');
+  result('busy', 'ກຳລັງບັນທຶກ… / Saving…', '', '');
   const r = await api({ op: 'urgentLeave', token: apprToken, id: ugPerson.id, type: ugType, from: $('ugFrom').value, to: $('ugTo').value, reason: $('ugReason').value, time: $('ugTime').value });
   busy = false;
   if (r && r.ok) {
-    result('good-mgr', 'ບັນທຶກລາພັກດ່ວນແລ້ວ', '', r.name + ' · ' + dmy(r.from) + (r.time ? ' ' + r.time : '') + (r.to !== r.from ? ' → ' + dmy(r.to) : '') + ' · ' + r.days + ' ມື້',
-      (r.final ? '✓ ອະນຸມັດແລ້ວ' : 'ສົ່ງຕໍ່ໃຫ້ ' + r.next + ' ອະນຸມັດ') + (r.clockedOut ? ' · ບັນທຶກອອກວຽກ ' + r.clockedOut : ''));
+    result('good-mgr', 'ບັນທຶກລາພັກດ່ວນແລ້ວ / Urgent leave saved', '', r.name + ' · ' + dmy(r.from) + (r.time ? ' ' + r.time : '') + (r.to !== r.from ? ' → ' + dmy(r.to) : '') + ' · ' + r.days + ' ມື້/days',
+      (r.final ? '✓ ອະນຸມັດແລ້ວ / Approved' : 'ສົ່ງຕໍ່ / Sent to ' + r.next) + (r.clockedOut ? ' · ອອກວຽກ / Out ' + r.clockedOut : ''));
     afterResult = () => loadPending(); resetIdle(20000);
     setTimeout(loadSummary, 1500);
     return;
   }
-  if (r && r.code === 'login') { startApprove(); $('hint').textContent = 'ໝົດເວລາ ກະລຸນາໃສ່ PIN ໃໝ່'; return; }
+  if (r && r.code === 'login') { startApprove(); $('hint').textContent = 'ໝົດເວລາ ກະລຸນາໃສ່ PIN ໃໝ່ / Timed out, enter PIN again'; return; }
   showError(r); afterResult = () => { show('urgentForm'); resetIdle(180000); };
 }
 
@@ -1154,23 +1160,23 @@ async function api(body){
 async function submit(body){
   if (busy) return; busy = true;
   clearTimeout(idleTimer);
-  result('busy', 'ກຳລັງບັນທຶກ…', '', '');
+  result('busy', 'ກຳລັງບັນທຶກ… / Saving…', '', '');
   const r = await api(body);
   busy = false;
   onResult(r);
 }
 function lateTag(min){
   if (min == null) return '';
-  if (min > 0) return 'ຊ້າ ' + min + ' ນາທີ';
-  if (min < 0) return 'ກ່ອນເວລາ ' + (-min) + ' ນາທີ';
-  return 'ຕົງເວລາ';
+  if (min > 0) return 'ຊ້າ / Late ' + min + ' ນທ/min';
+  if (min < 0) return 'ກ່ອນເວລາ / Early ' + (-min) + ' ນທ/min';
+  return 'ຕົງເວລາ / On time';
 }
 function onResult(r){
   if (r && r.ok){
-    if (r.action === 'In') result('good-in', 'ສະບາຍດີ ' + r.name, r.time, 'ບັນທຶກເຂົ້າວຽກແລ້ວ', lateTag(r.minutes));
+    if (r.action === 'In') result('good-in', 'ສະບາຍດີ / Hello ' + r.name, r.time, 'ບັນທຶກເຂົ້າວຽກແລ້ວ / Clocked in', lateTag(r.minutes));
     else {
       const h = Math.floor((r.worked || 0) / 60), m = (r.worked || 0) % 60;
-      result('good-out', 'ຂອບໃຈ ' + r.name, r.time, 'ບັນທຶກອອກວຽກແລ້ວ', 'ເຮັດວຽກ ' + h + ' ຊົ່ວໂມງ ' + m + ' ນາທີ');
+      result('good-out', 'ຂອບໃຈ / Thank you ' + r.name, r.time, 'ບັນທຶກອອກວຽກແລ້ວ / Clocked out', 'ເຮັດວຽກ / Worked ' + h + ' ຊມ/h ' + m + ' ນທ/min');
     }
     resetIdle(5000); setTimeout(loadSummary, 1500); return;
   }
@@ -1179,29 +1185,29 @@ function onResult(r){
 function showError(r){
   const c = r ? r.code : 'bad';
   const msg = {
-    nomatch:  ['ໃບໜ້າບໍ່ກົງກັບລະຫັດນີ້', (r && r.left > 0 ? 'ລອງໄດ້ອີກ ' + r.left + ' ເທື່ອ · ' : '') + 'ກວດລະຫັດພະນັກງານ ຫຼື ໃຊ້ PIN'],
-    noface:   ['ລະຫັດນີ້ຍັງບໍ່ໄດ້ລົງທະບຽນໃບໜ້າ', 'ໃຊ້ລະຫັດ PIN ຫຼື ແຈ້ງຫົວໜ້າໃຫ້ລົງທະບຽນ'],
-    notfound: ['ບໍ່ພົບລະຫັດພະນັກງານນີ້', 'ກວດລະຫັດແລ້ວລອງໃໝ່'],
-    badpin:   ['ລະຫັດ PIN ບໍ່ຖືກຕ້ອງ', r && r.left > 0 ? 'ລອງໄດ້ອີກ ' + r.left + ' ເທື່ອ' : 'ລໍ 5 ນາທີ ຫຼື ແຈ້ງຫົວໜ້າ'],
-    badmgr:   ['ລະຫັດຜູ້ຈັດການບໍ່ຖືກຕ້ອງ', ''],
-    badappr:  ['PIN ຜູ້ອະນຸມັດບໍ່ຖືກຕ້ອງ', 'ກວດ PIN ແລ້ວລອງໃໝ່'],
-    badtime:  ['ເວລາບໍ່ຖືກຕ້ອງ', 'ເລືອກເວລາໃໝ່ ຫຼື ວ່າງໄວ້ສຳລັບທັງມື້'],
-    notyours: ['ທ່ານບໍ່ໄດ້ເປັນຜູ້ອະນຸມັດຂອງພະນັກງານຄົນນີ້', 'ໃຫ້ຜູ້ຈັດການທົ່ວໄປ ຫຼື ເຈົ້າຂອງ ບັນທຶກແທນ'],
-    locked:   ['ໃສ່ລະຫັດຜິດຫຼາຍເທື່ອ', 'ລໍ 5 ນາທີ ຫຼື ແຈ້ງຫົວໜ້າ'],
-    already:  [(r && r.name ? r.name + ' ' : '') + 'ເຂົ້າວຽກແລ້ວ', 'ເຂົ້າວຽກເວລາ ' + (r && r.time) + '. ຖ້າຈະອອກ ໃຫ້ກົດ ອອກວຽກ'],
-    notin:    [(r && r.name ? r.name + ' ' : '') + 'ຍັງບໍ່ໄດ້ເຂົ້າວຽກ', 'ໃຫ້ກົດ ເຂົ້າວຽກ ກ່ອນ'],
-    duplicate:['ໜ້ານີ້ລົງທະບຽນແລ້ວເປັນ ' + (r && r.name), 'ກວດລະຫັດພະນັກງານອີກຄັ້ງ'],
-    unsure:   ['ບໍ່ແນ່ໃຈວ່າແມ່ນໃຜ', 'ລອງໃໝ່ ຫຼື ໃຊ້ລະຫັດ PIN'],
-    unstable: ['ບັນທຶກໃບໜ້າບໍ່ຊັດ', 'ລອງໃໝ່ໃນບ່ອນແສງດີ ແລະ ຢູ່ນິ່ງໆ'],
-    future:   ['ເວລາບໍ່ຖືກຕ້ອງ', 'ເລືອກເວລາທີ່ຜ່ານມາແລ້ວ'],
-    badkey:   ['ເຄື່ອງນີ້ຍັງບໍ່ໄດ້ເຊື່ອມຕໍ່ລະບົບ', 'ເປີດລິ້ງທີ່ມີ key= ໃນເຄື່ອງນີ້'],
-    network:  ['ເຊື່ອມຕໍ່ບໍ່ໄດ້', 'ກວດ Wi-Fi ແລ້ວລອງໃໝ່'],
-    overlap:  ['ມີຄຳຂໍລາພັກໃນວັນດັ່ງກ່າວແລ້ວ', (r && r.from ? r.from + ' → ' + r.to + ' · ' : '') + (r && r.status === 'Yes' ? 'ອະນຸມັດແລ້ວ' : 'ລໍຖ້າອະນຸມັດ')],
-    baddate:  ['ວັນທີບໍ່ຖືກຕ້ອງ', 'ເລືອກວັນທີໃໝ່'],
-    expired:  ['ໝົດເວລາ', 'ກະລຸນາເລີ່ມຂໍລາພັກໃໝ່'],
-    bad:      ['ບັນທຶກບໍ່ໄດ້', 'ລອງໃໝ່ອີກຄັ້ງ'],
-    error:    ['ບັນທຶກບໍ່ໄດ້', 'ລອງໃໝ່ອີກຄັ້ງ']
-  }[c] || ['ບັນທຶກບໍ່ໄດ້', 'ລອງໃໝ່ອີກຄັ້ງ'];
+    nomatch:  ['ໃບໜ້າບໍ່ກົງກັບລະຫັດນີ້ / Face does not match this ID', (r && r.left > 0 ? 'ລອງໄດ້ອີກ ' + r.left + ' ເທື່ອ / ' + r.left + ' tries left · ' : '') + 'ກວດລະຫັດພະນັກງານ ຫຼື ໃຊ້ PIN / Check the staff ID or use PIN'],
+    noface:   ['ລະຫັດນີ້ຍັງບໍ່ໄດ້ລົງທະບຽນໃບໜ້າ / This ID has no face registered', 'ໃຊ້ລະຫັດ PIN ຫຼື ແຈ້ງຫົວໜ້າໃຫ້ລົງທະບຽນ / Use PIN or ask your manager to register you'],
+    notfound: ['ບໍ່ພົບລະຫັດພະນັກງານນີ້ / Staff ID not found', 'ກວດລະຫັດແລ້ວລອງໃໝ່ / Check the ID and try again'],
+    badpin:   ['ລະຫັດ PIN ບໍ່ຖືກຕ້ອງ / Wrong PIN', r && r.left > 0 ? 'ລອງໄດ້ອີກ ' + r.left + ' ເທື່ອ / ' + r.left + ' tries left' : 'ລໍ 5 ນາທີ ຫຼື ແຈ້ງຫົວໜ້າ / Wait 5 minutes or tell your manager'],
+    badmgr:   ['ລະຫັດຜູ້ຈັດການບໍ່ຖືກຕ້ອງ / Wrong manager code', ''],
+    badappr:  ['PIN ຜູ້ອະນຸມັດບໍ່ຖືກຕ້ອງ / Wrong approver PIN', 'ກວດ PIN ແລ້ວລອງໃໝ່ / Check the PIN and try again'],
+    badtime:  ['ເວລາບໍ່ຖືກຕ້ອງ / Wrong time', 'ເລືອກເວລາໃໝ່ ຫຼື ວ່າງໄວ້ສຳລັບທັງມື້ / Choose a new time, or leave empty for all day'],
+    notyours: ['ທ່ານບໍ່ໄດ້ເປັນຜູ້ອະນຸມັດຂອງພະນັກງານຄົນນີ້ / You are not an approver for this person', 'ໃຫ້ຜູ້ຈັດການທົ່ວໄປ ຫຼື ເຈົ້າຂອງ ບັນທຶກແທນ / Ask the general manager or owner'],
+    locked:   ['ໃສ່ລະຫັດຜິດຫຼາຍເທື່ອ / Too many wrong tries', 'ລໍ 5 ນາທີ ຫຼື ແຈ້ງຫົວໜ້າ / Wait 5 minutes or tell your manager'],
+    already:  [(r && r.name ? r.name + ' ' : '') + 'ເຂົ້າວຽກແລ້ວ / Already clocked in', 'ເຂົ້າວຽກເວລາ ' + (r && r.time) + '. ຖ້າຈະອອກ ໃຫ້ກົດ ອອກວຽກ / Clocked in at ' + (r && r.time) + '. To leave, tap Clock out'],
+    notin:    [(r && r.name ? r.name + ' ' : '') + 'ຍັງບໍ່ໄດ້ເຂົ້າວຽກ / Not clocked in', 'ໃຫ້ກົດ ເຂົ້າວຽກ ກ່ອນ / Tap Clock in first'],
+    duplicate:['ໜ້ານີ້ລົງທະບຽນແລ້ວເປັນ ' + (r && r.name) + ' / This face is already registered as ' + (r && r.name), 'ກວດລະຫັດພະນັກງານອີກຄັ້ງ / Check the staff ID again'],
+    unsure:   ['ບໍ່ແນ່ໃຈວ່າແມ່ນໃຜ / Not sure who this is', 'ລອງໃໝ່ ຫຼື ໃຊ້ລະຫັດ PIN / Try again or use PIN'],
+    unstable: ['ບັນທຶກໃບໜ້າບໍ່ຊັດ / Face samples unclear', 'ລອງໃໝ່ໃນບ່ອນແສງດີ ແລະ ຢູ່ນິ່ງໆ / Try again in good light and hold still'],
+    future:   ['ເວລາບໍ່ຖືກຕ້ອງ / Wrong time', 'ເລືອກເວລາທີ່ຜ່ານມາແລ້ວ / Choose a time that has passed'],
+    badkey:   ['ເຄື່ອງນີ້ຍັງບໍ່ໄດ້ເຊື່ອມຕໍ່ລະບົບ / This tablet is not connected', 'ເປີດລິ້ງທີ່ມີ key= ໃນເຄື່ອງນີ້ / Open the link with key= on this tablet'],
+    network:  ['ເຊື່ອມຕໍ່ບໍ່ໄດ້ / No connection', 'ກວດ Wi-Fi ແລ້ວລອງໃໝ່ / Check Wi-Fi and try again'],
+    overlap:  ['ມີຄຳຂໍລາພັກໃນວັນດັ່ງກ່າວແລ້ວ / There is already leave on those dates', (r && r.from ? r.from + ' → ' + r.to + ' · ' : '') + (r && r.status === 'Yes' ? 'ອະນຸມັດແລ້ວ / Approved' : 'ລໍຖ້າອະນຸມັດ / Waiting for approval')],
+    baddate:  ['ວັນທີບໍ່ຖືກຕ້ອງ / Wrong date', 'ເລືອກວັນທີໃໝ່ / Choose new dates'],
+    expired:  ['ໝົດເວລາ / Timed out', 'ກະລຸນາເລີ່ມຂໍລາພັກໃໝ່ / Please start the leave request again'],
+    bad:      ['ບັນທຶກບໍ່ໄດ້ / Could not save', 'ລອງໃໝ່ອີກຄັ້ງ / Please try again'],
+    error:    ['ບັນທຶກບໍ່ໄດ້ / Could not save', 'ລອງໃໝ່ອີກຄັ້ງ / Please try again']
+  }[c] || ['ບັນທຶກບໍ່ໄດ້ / Could not save', 'ລອງໃໝ່ອີກຄັ້ງ / Please try again'];
   result('bad', msg[0], '', msg[1]);
   resetIdle(6000);
 }
