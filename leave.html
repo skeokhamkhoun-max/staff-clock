@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Leave Request</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#14302a; --muted:#5d6f6a; --bg:#e9efec; --card:#fff; --line:#dde5e1; --brand:#1f7a4d; --red:#b3261e; --blue:#2f6fb3; --amber:#8a5a00; }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans Lao',system-ui,-apple-system,sans-serif}
+  .wrap{max-width:560px;margin:0 auto;padding:20px 16px 48px}
+  h1{font-size:24px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:14px;margin-bottom:16px}
+  .card{background:var(--card);border-radius:16px;padding:16px;box-shadow:0 1px 2px rgba(0,0,0,.06);margin-bottom:14px}
+  label{display:block;font-size:14px;font-weight:600;color:var(--muted);margin:12px 0 6px}
+  label:first-child{margin-top:0}
+  input,textarea{width:100%;font:inherit;font-size:18px;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:#fbfcfb;color:var(--ink)}
+  input:focus,textarea:focus{outline:none;border-color:var(--brand)}
+  textarea{font-size:16px;min-height:76px;resize:vertical}
+  .btn{display:block;width:100%;border:0;border-radius:12px;padding:14px;font:inherit;font-size:17px;font-weight:700;background:var(--brand);color:#fff;cursor:pointer;margin-top:16px}
+  .btn:disabled{background:#b6c2bd;cursor:default}
+  .btn.ghost{background:#eef3f0;color:var(--ink);font-weight:600}
+  .msg{border-radius:12px;padding:12px 14px;margin-top:12px;font-size:15px;display:none}
+  .msg.err{background:#fde8e6;color:var(--red);display:block}
+  .msg.ok{background:#e3f3ea;color:var(--brand);display:block}
+  .who{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .who b{font-size:18px}
+  .who small{display:block;color:var(--muted);font-size:13px}
+  .out{border:0;background:#eef3f0;border-radius:999px;padding:7px 14px;font:inherit;font-size:14px;cursor:pointer;color:var(--ink);white-space:nowrap}
+  .types{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .types button{border:1.5px solid var(--line);background:#fbfcfb;border-radius:12px;padding:10px 8px;font:inherit;font-size:14px;cursor:pointer;color:var(--ink);text-align:center;line-height:1.3}
+  .types button.sel{border-color:var(--brand);background:#e3f3ea;font-weight:700}
+  .dates{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+  .dates input{min-width:0;font-size:16px;padding:12px 10px;-webkit-appearance:none;appearance:none}
+  .days{margin-top:8px;font-size:15px;color:var(--muted)}
+  .days b{color:var(--ink)}
+  h2{font-size:17px;margin:4px 0 8px}
+  .lv{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .lv:last-child{border-bottom:0}
+  .lv .d{font-weight:700;font-variant-numeric:tabular-nums}
+  .lv .t{color:var(--muted);font-size:13px}
+  .st{font-size:13px;font-weight:700;text-align:right;white-space:nowrap}
+  .st.yes{color:var(--brand)} .st.no{color:var(--red)} .st.pending{color:var(--amber)}
+  .st small{display:block;font-weight:500;color:var(--muted);white-space:normal}
+  .none{color:var(--muted);font-size:14px}
+  .hide{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ຂໍລາພັກ / Leave request</h1>
+  <div class="sub">ໃສ່ລະຫັດພະນັກງານ ແລະ PIN ຂອງທ່ານ / Enter your staff ID and PIN</div>
+
+  <!-- step 1: sign in -->
+  <div class="card" id="login">
+    <label for="id">ລະຫັດພະນັກງານ / Staff ID</label>
+    <input id="id" inputmode="numeric" autocomplete="off" placeholder="e.g. 120">
+    <label for="pin">PIN</label>
+    <input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="••••">
+    <button class="btn" id="goBtn" onclick="signIn()">ຕໍ່ໄປ / Continue</button>
+    <div class="msg" id="loginMsg"></div>
+  </div>
+
+  <!-- step 2: form -->
+  <div id="main" class="hide">
+    <div class="card who">
+      <div><b id="nm"></b><small id="nmSub"></small></div>
+      <button class="out" onclick="signOut()">ອອກ / Sign out</button>
+    </div>
+
+    <div class="card" id="formCard">
+      <h2>ຄຳຂໍໃໝ່ / New request</h2>
+      <label>ປະເພດການລາ / Leave type</label>
+      <div class="types" id="types"></div>
+      <div class="dates">
+        <div><label for="from">ແຕ່ວັນທີ / From</label><input type="date" id="from" onchange="check()"></div>
+        <div><label for="to">ຫາວັນທີ / To</label><input type="date" id="to" onchange="check()"></div>
+      </div>
+      <div class="days" id="days"></div>
+      <label for="reason">ເຫດຜົນ / Reason</label>
+      <textarea id="reason" maxlength="200" placeholder="ບໍ່ບັງຄັບ / Optional"></textarea>
+      <button class="btn" id="sendBtn" disabled onclick="send()">ສົ່ງຄຳຂໍ / Send request</button>
+      <div class="msg" id="sendMsg"></div>
+    </div>
+
+    <div class="card">
+      <h2>ຄຳຂໍຂອງຂ້ອຍ / My requests</h2>
+      <div id="mine"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbyuBVRj_ENhG2c2FzBsVXIA-5mXvaPC0YUGOLjjmuhf1mp3R7XsX7rIrF5xCt4fMi2G/exec';
+const LKEY = new URLSearchParams(location.search).get('k') || '';
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const TYPES = [['Annual leave','ລາພັກປະຈຳປີ / Annual'],['Sick leave','ລາປ່ວຍ / Sick'],['Emergency leave','ລາສຸກເສີນ / Emergency'],
+               ['Personal leave','ລາກິດ / Personal'],['Unpaid leave','ລາບໍ່ໄດ້ເງິນເດືອນ / Unpaid'],['Other','ອື່ນໆ / Other']];
+const TYPE_LAO = Object.fromEntries(TYPES);
+let token = '', type = '', who = null;
+
+const ERR = {
+  badkey:   'ລິ້ງບໍ່ຖືກຕ້ອງ / This link is not valid',
+  bad:      'ກະລຸນາໃສ່ລະຫັດ ແລະ PIN / Please enter your ID and PIN',
+  notfound: 'ບໍ່ພົບລະຫັດພະນັກງານນີ້ / Staff ID not found',
+  locked:   'ໃສ່ PIN ຜິດຫຼາຍເທື່ອ ລໍ 5 ນາທີ / Too many wrong tries — wait 5 minutes',
+  baddate:  'ວັນທີບໍ່ຖືກຕ້ອງ / Please check the dates',
+  expired:  'ໝົດເວລາ ກະລຸນາເຂົ້າໃໝ່ / Timed out — please sign in again',
+  error:    'ມີບັນຫາ ລອງໃໝ່ / Something went wrong — try again',
+  net:      'ເຊື່ອມຕໍ່ບໍ່ໄດ້ / No connection — try again'
+};
+function errText(r){
+  if (r.code === 'badpin') return 'PIN ບໍ່ຖືກຕ້ອງ / Wrong PIN' + (r.left > 0 ? ' · ລອງໄດ້ອີກ ' + r.left + ' ເທື່ອ / ' + r.left + ' tries left' : '');
+  if (r.code === 'overlap') return 'ມີການລາໃນວັນດັ່ງກ່າວແລ້ວ / You already have leave on those dates (' + dmy(r.from) + ' – ' + dmy(r.to) + ', ' +
+                                   (r.status === 'Yes' ? 'ອະນຸມັດແລ້ວ / approved' : 'ລໍຖ້າ / waiting') + ')';
+  return ERR[r.code] || ERR.error;
+}
+function msg(el, cls, t){ $(el).className = 'msg ' + cls; $(el).textContent = t; }
+function dmy(s){ const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? m[3] + '/' + m[2] + '/' + m[1] : s; }
+function today(back){ const d = new Date(Date.now() - (back || 0) * 86400000); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+
+async function api(body){
+  try {
+    const r = await fetch(API, { method: 'POST', body: JSON.stringify(Object.assign({ lkey: LKEY }, body)) });
+    return await r.json();
+  } catch (e) { return { ok: false, code: 'net' }; }
+}
+
+async function signIn(){
+  const id = $('id').value.trim(), pin = $('pin').value.trim();
+  if (!id || !pin) { msg('loginMsg', 'err', ERR.bad); return; }
+  $('goBtn').disabled = true; $('goBtn').textContent = 'ກຳລັງກວດ… / Checking…';
+  const r = await api({ op: 'lvVerify', id: id, pin: pin });
+  $('goBtn').disabled = false; $('goBtn').textContent = 'ຕໍ່ໄປ / Continue';
+  if (!r.ok) { msg('loginMsg', 'err', errText(r)); return; }
+  token = r.token; who = r;
+  $('pin').value = ''; $('loginMsg').className = 'msg';
+  $('nm').textContent = r.name + ' #' + r.id;
+  $('nmSub').textContent = [r.branch, r.team].filter(Boolean).join(' · ');
+  $('login').classList.add('hide'); $('main').classList.remove('hide');
+  resetForm(); renderMine(r.mine || []);
+}
+function signOut(){
+  token = ''; who = null; $('id').value = ''; $('pin').value = '';
+  $('main').classList.add('hide'); $('login').classList.remove('hide'); $('sendMsg').className = 'msg';
+}
+
+function resetForm(){
+  type = '';
+  $('types').innerHTML = TYPES.map(t => '<button type="button" data-v="' + t[0] + '">' + esc(t[1]) + '</button>').join('');
+  $('types').querySelectorAll('button').forEach(b => b.onclick = () => {
+    type = b.dataset.v; $('types').querySelectorAll('button').forEach(x => x.classList.toggle('sel', x === b)); check();
+  });
+  $('from').value = ''; $('to').value = ''; $('reason').value = '';
+  $('from').min = $('to').min = today(7);   // sick leave can be sent up to 7 days after
+  check();
+}
+function check(){
+  const f = $('from').value, t = $('to').value;
+  if (f && (!t || t < f)) $('to').value = f;
+  const T = $('to').value;
+  let days = 0;
+  if (f && T) days = Math.round((new Date(T + 'T00:00') - new Date(f + 'T00:00')) / 86400000) + 1;
+  $('days').innerHTML = days > 0 ? 'ລວມ / Total: <b>' + days + ' ມື້ / day' + (days > 1 ? 's' : '') + '</b>' : '';
+  $('sendBtn').disabled = !type || days < 1;
+}
+
+async function send(){
+  $('sendBtn').disabled = true; $('sendBtn').textContent = 'ກຳລັງສົ່ງ… / Sending…';
+  const r = await api({ op: 'lvSubmit', token: token, type: type, from: $('from').value, to: $('to').value, reason: $('reason').value });
+  $('sendBtn').textContent = 'ສົ່ງຄຳຂໍ / Send request';
+  if (!r.ok) {
+    msg('sendMsg', 'err', errText(r));
+    if (r.code === 'expired') setTimeout(signOut, 2500); else check();
+    return;
+  }
+  msg('sendMsg', 'ok', '✓ ສົ່ງແລ້ວ / Sent: ' + dmy(r.from) + (r.to !== r.from ? ' – ' + dmy(r.to) : '') + ' · ' + r.days + ' ມື້/day' + (r.days > 1 ? 's' : '') +
+      (r.next ? ' · ລໍຖ້າ / Waiting for: ' + r.next : ''));
+  renderMine(r.mine || []);
+  // the sign-in is used up after one request; to send another, sign in again
+  $('formCard').querySelectorAll('button,input,textarea').forEach(el => el.disabled = true);
+  setTimeout(() => {
+    const again = document.createElement('button');
+    again.className = 'btn ghost'; again.textContent = 'ສົ່ງຄຳຂໍອື່ນ / Send another request';
+    again.onclick = signOut; $('sendMsg').after(again);
+  }, 50);
+}
+
+function renderMine(list){
+  if (!list.length) { $('mine').innerHTML = '<div class="none">ຍັງບໍ່ມີ / None yet</div>'; return; }
+  $('mine').innerHTML = list.map(l => {
+    const st = l.status === 'yes' ? 'ອະນຸມັດແລ້ວ / Approved' : l.status === 'no' ? 'ບໍ່ອະນຸມັດ / Not approved' : 'ລໍຖ້າ / Waiting';
+    return '<div class="lv"><div><div class="d">' + esc(dmy(l.from)) + (l.to !== l.from ? ' – ' + esc(dmy(l.to)) : '') + '</div>' +
+      '<div class="t">' + esc(TYPE_LAO[l.type] || l.type) + ' · ' + l.days + ' ມື້/day' + (l.days > 1 ? 's' : '') + '</div></div>' +
+      '<div class="st ' + l.status + '">' + st + (l.waiting ? '<small>' + esc(l.waiting) + '</small>' : '') + '</div></div>';
+  }).join('');
+}
+
+$('pin').addEventListener('keydown', e => { if (e.key === 'Enter') signIn(); });
+if (!LKEY) msg('loginMsg', 'err', 'ລິ້ງບໍ່ຄົບ / This link is missing its key');
+</script>
+</body>
+</html>
