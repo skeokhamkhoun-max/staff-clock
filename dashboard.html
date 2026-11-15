@@ -85,6 +85,17 @@
   .bCard .panel{margin:10px -12px -10px;border-radius:0 0 16px 16px;box-shadow:none}
   @media (max-width:980px){ .tiles{grid-template-columns:repeat(3,1fr)} }
   @media (max-width:700px){ .tblWrap{display:none} .bCards{display:flex} }
+  .upList{background:var(--card);border-radius:16px;box-shadow:0 1px 2px rgba(0,0,0,.06);padding:4px 16px 8px;border-top:5px solid var(--leave)}
+  .upGrp{font-size:13px;font-weight:700;color:var(--leave);margin:12px 0 2px}
+  .up{display:grid;grid-template-columns:132px 1fr auto;gap:4px 14px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+  .up:last-child{border-bottom:0}
+  .up .dt{font-weight:700;font-variant-numeric:tabular-nums;font-size:15px}
+  .up .dt small{display:block;color:var(--muted);font-weight:500;font-size:12px}
+  .up .who{font-weight:600;font-size:15px}
+  .up .who span{color:var(--muted);font-weight:400}
+  .up .whr{color:var(--muted);font-size:13px}
+  .up .ty{color:var(--leave);font-weight:600;font-size:13px;text-align:right}
+  @media (max-width:700px){ .up{grid-template-columns:112px 1fr} .up .ty{grid-column:2;text-align:left} }
   @media (max-width:560px){
     .tiles{grid-template-columns:repeat(2,1fr);gap:10px}
     .tile{padding:12px 12px 10px}
@@ -110,6 +121,9 @@
   <h2>ແຍກຕາມສາຂາ / By branch</h2>
   <div class="tblWrap"><table id="tbl"></table></div>
   <div class="bCards" id="bCards"></div>
+
+  <h2>ລາພັກທີ່ອະນຸມັດແລ້ວ / Approved leave <span id="upN" style="color:var(--muted);font-weight:500"></span></h2>
+  <div class="upList" id="upList"></div>
 
   <footer>ອັບເດດອັດຕະໂນມັດທຸກ 1 ນາທີ / Updates every minute · ແຕະຕົວເລກເພື່ອເບິ່ງລາຍຊື່ / Tap a number to see names</footer>
 </div>
@@ -221,6 +235,25 @@ function render(){
              '<div class="v' + (n ? '' : ' zero') + '">' + n + '</div><div class="l">' + esc(c.lao) + '<br>' + esc(c.en) + '</div></button>';
     }).join('') + '</div>' + (open && open.branch === b ? panelHtml(CATS.find(c => c.key === open.cat), b) : '') + '</div>').join('');
   $('bCards').querySelectorAll('.bCell').forEach(el => el.onclick = () => toggle(el.dataset.cat, el.dataset.b));
+  renderUpcoming();
+}
+
+function renderUpcoming(){
+  const list = data.upcoming || [];
+  $('upN').textContent = '(' + list.length + ')';
+  if (!list.length) { $('upList').innerHTML = '<div class="none">ບໍ່ມີລາພັກທີ່ອະນຸມັດແລ້ວ / No approved leave coming up</div>'; return; }
+  const row = u => {
+    const rng = u.from === u.to ? dmy(u.from) : dmy(u.from) + ' – ' + dmy(u.to);
+    const wd = d => { const m = String(d).match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? DAYS[new Date(+m[1], m[2]-1, +m[3]).getDay()].replace('ວັນ','') + ' / ' + DAYS_EN[new Date(+m[1], m[2]-1, +m[3]).getDay()].slice(0,3) : ''; };
+    return '<div class="up"><div class="dt">' + esc(rng) + '<small>' + esc(wd(u.from)) + ' · ' + u.days + ' ມື້/day' + (u.days > 1 ? 's' : '') + '</small></div>' +
+      '<div><div class="who">' + esc(u.name) + ' <span>#' + esc(u.id) + '</span></div><div class="whr">' + esc(u.branch || '') + (u.team ? ' · ' + esc(u.team) : '') + '</div></div>' +
+      '<div class="ty">' + esc(LEAVE[u.type] || u.type || 'ລາພັກ / Leave') + (u.time ? ' · ' + esc(u.time) : '') + '</div></div>';
+  };
+  const now = list.filter(u => u.now), next = list.filter(u => !u.now);
+  let h = '';
+  if (now.length) h += '<div class="upGrp">ກຳລັງລາຢູ່ / On leave now · ' + now.length + '</div>' + now.map(row).join('');
+  if (next.length) h += '<div class="upGrp">ກຳລັງຈະມາ / Coming up · ' + next.length + '</div>' + next.map(row).join('');
+  $('upList').innerHTML = h;
 }
 
 function toggle(cat, branch){
