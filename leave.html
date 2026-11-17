@@ -46,6 +46,8 @@
   .st.yes{color:var(--brand)} .st.no{color:var(--red)} .st.pending{color:var(--amber)}
   .st small{display:block;font-weight:500;color:var(--muted);white-space:normal}
   .none{color:var(--muted);font-size:14px}
+  .path{font-size:13px;margin-top:4px;line-height:1.5}
+  .path .ok{color:var(--brand)} .path .x{color:var(--red)} .path .wt{color:var(--amber);font-weight:600}
   .hide{display:none}
 </style>
 </head>
@@ -190,13 +192,20 @@ async function send(){
   }, 50);
 }
 
+// approval path: "✓ A 16/11 → ✓ B 17/11 → ⏳ waiting for C"
+function pathHtml(l){
+  const parts = String(l.log || '').split(' · ').map(s => s.trim()).filter(Boolean)
+    .map(s => '<span class="' + (s.charAt(0) === '✕' ? 'x' : 'ok') + '">' + esc(s.replace(/\s*\((skip|urgent)\)$/, '')) + '</span>');
+  if (l.status === 'pending') parts.push('<span class="wt">⏳ ລໍ / waiting: ' + esc(l.waiting || l.stage || '…') + '</span>');
+  return parts.length ? '<div class="path">' + parts.join(' → ') + '</div>' : '';
+}
 function renderMine(list){
   if (!list.length) { $('mine').innerHTML = '<div class="none">ຍັງບໍ່ມີ / None yet</div>'; return; }
   $('mine').innerHTML = list.map(l => {
     const st = l.status === 'yes' ? 'ອະນຸມັດແລ້ວ / Approved' : l.status === 'no' ? 'ບໍ່ອະນຸມັດ / Not approved' : 'ລໍຖ້າ / Waiting';
     return '<div class="lv"><div><div class="d">' + esc(dmy(l.from)) + (l.to !== l.from ? ' – ' + esc(dmy(l.to)) : '') + '</div>' +
-      '<div class="t">' + esc(TYPE_LAO[l.type] || l.type) + ' · ' + l.days + ' ມື້/day' + (l.days > 1 ? 's' : '') + '</div></div>' +
-      '<div class="st ' + l.status + '">' + st + (l.waiting ? '<small>' + esc(l.waiting) + '</small>' : '') + '</div></div>';
+      '<div class="t">' + esc(TYPE_LAO[l.type] || l.type) + ' · ' + l.days + ' ມື້/day' + (l.days > 1 ? 's' : '') + '</div>' + pathHtml(l) + '</div>' +
+      '<div class="st ' + l.status + '">' + st + '</div></div>';
   }).join('');
 }
 
