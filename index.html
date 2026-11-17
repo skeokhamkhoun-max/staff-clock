@@ -158,6 +158,11 @@
   .apprBadge{color:var(--in);margin-right:8px} .apprBadge b{background:var(--in);color:#fff;border-radius:999px;padding:1px 9px;margin-left:4px}
   .apprCard .log{font-size:15px;color:var(--in);margin-top:4px}
   .apprCard .wait{font-size:15px;color:#9a5b00;margin-top:4px;font-weight:600}
+  .trkHead{font-size:18px;font-weight:700;color:var(--muted);margin:6px 4px 0}
+  .apprCard .path{font-size:16px;margin-top:6px;line-height:1.5}
+  .apprCard .path .ok{color:var(--in)} .apprCard .path .x{color:var(--err)} .apprCard .path .wt{color:#9a5b00;font-weight:700}
+  .apprCard .stt{font-size:18px;font-weight:700;white-space:nowrap}
+  .apprCard .stt.yes{color:var(--in)} .apprCard .stt.no{color:var(--err)} .apprCard .stt.pending{color:#9a5b00}
   .apprCard .fwd{font-size:17px;font-weight:700;color:var(--in);max-width:190px;text-align:right}
 
   /* keypad */
@@ -296,7 +301,7 @@
 </section>
 
 <section id="approve" class="screen">
-  <div class="bar"><h1 class="mgr" id="apprTitle">ລໍຖ້າອະນຸມັດ / Waiting for approval</h1><div><button class="ghost apprBtn" onclick="openUrgent()">➕ ລາພັກດ່ວນ / Urgent leave</button><button class="ghost" onclick="loadPending()">ໂຫຼດໃໝ່ / Reload</button><button class="ghost" onclick="goHome()">ອອກ / Exit</button></div></div>
+  <div class="bar"><h1 class="mgr" id="apprTitle">ລໍຖ້າອະນຸມັດ / Waiting for approval</h1><div><button class="ghost apprBtn" onclick="openUrgent()">➕ ລາພັກດ່ວນ / Urgent leave</button><button class="ghost apprBtn" id="trkToggle" onclick="toggleTrack()">📋 ຕິດຕາມ / Tracking</button><button class="ghost" onclick="trackMode ? loadTrack() : loadPending()">ໂຫຼດໃໝ່ / Reload</button><button class="ghost" onclick="goHome()">ອອກ / Exit</button></div></div>
   <div class="apprList" id="apprList"></div>
 </section>
 
@@ -1038,6 +1043,7 @@ async function loadPending(){
   if (!r || !r.ok) { showError(r); return; }
   mode = 'mgr'; padState = null;
   pendingList = r.list || [];
+  trackMode = false; $('trkToggle').textContent = '📋 ຕິດຕາມ / Tracking';
   renderPending();
   show('approve'); resetIdle(180000);
 }
@@ -1073,6 +1079,58 @@ function renderPending(){
     box.appendChild(c);
   });
 }
+// ---------------- leave tracking: who approved, who is next ----------------
+let trackMode = false, trackRows = [];
+function toggleTrack(){
+  if (busy) return;
+  if (trackMode) { trackMode = false; $('trkToggle').textContent = '📋 ຕິດຕາມ / Tracking'; renderPending(); resetIdle(180000); return; }
+  loadTrack();
+}
+async function loadTrack(){
+  if (busy) return; busy = true;
+  resetIdle(180000);
+  $('apprTitle').textContent = 'ກຳລັງໂຫຼດ… / Loading…';
+  const r = await api({ op: 'trackLeave', token: apprToken });
+  busy = false;
+  if (r && r.code === 'login') { startApprove(); $('hint').textContent = 'ໝົດເວລາ ກະລຸນາໃສ່ PIN ໃໝ່ / Timed out, enter PIN again'; return; }
+  if (!r || !r.ok) { showError(r); afterResult = () => { renderPending(); show('approve'); resetIdle(180000); }; return; }
+  trackRows = r.list || []; trackMode = true;
+  $('trkToggle').textContent = '✅ ລໍອະນຸມັດ / To approve';
+  renderTrack();
+}
+function renderTrack(){
+  $('apprTitle').textContent = apprName + ' · ຕິດຕາມການລາ / Leave tracking';
+  const box = $('apprList'); box.innerHTML = '';
+  if (!trackRows.length) { box.innerHTML = '<div class="apprEmpty">ບໍ່ມີຄຳຂໍລາພັກ / No leave requests</div>'; return; }
+  const head = t => { const d = document.createElement('div'); d.className = 'trkHead'; d.textContent = t; box.appendChild(d); };
+  const wait = trackRows.filter(l => l.status === 'pending'), done = trackRows.filter(l => l.status !== 'pending');
+  const card = l => {
+    const c = document.createElement('div'); c.className = 'apprCard';
+    const info = document.createElement('div'); info.className = 'info';
+    const add = (cls, txt) => { const d = document.createElement('div'); d.className = cls; d.textContent = txt; info.appendChild(d); return d; };
+    const nm = add('nm', l.name + ' '); const sp = document.createElement('span'); sp.textContent = '#' + l.id; nm.appendChild(sp);
+    add('meta', [l.team, l.branch, l.at ? 'ຂໍເມື່ອ / Asked ' + l.at : ''].filter(Boolean).join(' · '));
+    add('dt', (TYPE_LAO[l.type] || l.type) + ' · ' + dmy(l.from) + (l.to !== l.from ? ' → ' + dmy(l.to) : '') + ' · ' + l.days + ' ມື້/days' + (l.time ? ' · ເລີ່ມ / starts ' + l.time : ''));
+    if (l.reason) add('note', 'ເຫດຜົນ / Reason: ' + l.reason);
+    const path = add('path', '');
+    String(l.log || '').split(' · ').map(x => x.trim()).filter(Boolean).forEach((x, i) => {
+      if (i) path.appendChild(document.createTextNode(' → '));
+      const s = document.createElement('span'); s.className = x.charAt(0) === '✕' ? 'x' : 'ok'; s.textContent = x.replace(/\s*\((skip|urgent)\)$/, ''); path.appendChild(s);
+    });
+    if (l.status === 'pending') {
+      if (path.childNodes.length) path.appendChild(document.createTextNode(' → '));
+      const s = document.createElement('span'); s.className = 'wt'; s.textContent = '⏳ ລໍ / waiting: ' + (l.waiting || l.stage || '…'); path.appendChild(s);
+    }
+    c.appendChild(info);
+    const st = document.createElement('div'); st.className = 'stt ' + l.status;
+    st.textContent = l.status === 'yes' ? '✓ ອະນຸມັດ / Approved' : l.status === 'no' ? '✕ ບໍ່ອະນຸມັດ / Rejected' : '⏳ ລໍຖ້າ / Waiting';
+    c.appendChild(st);
+    box.appendChild(c);
+  };
+  if (wait.length) { head('⏳ ກຳລັງດຳເນີນການ / In progress · ' + wait.length); wait.forEach(card); }
+  if (done.length) { head('ສຳເລັດແລ້ວ / Decided · ' + done.length); done.forEach(card); }
+}
+
 async function decide(p, decision){
   if (busy || p.done) return; busy = true;
   resetIdle(180000);
