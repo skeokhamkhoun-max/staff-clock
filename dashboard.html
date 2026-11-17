@@ -20,6 +20,11 @@
   .date{color:var(--muted);font-size:15px;margin-top:2px}
   .upd{color:var(--muted);font-size:14px;text-align:right}
   .upd b{color:var(--ink);font-weight:600}
+  .hdrR{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+  .lvBtn{display:inline-flex;align-items:center;gap:6px;background:var(--in);color:#fff;text-decoration:none;font-weight:700;font-size:15px;
+         padding:10px 16px;border-radius:999px;box-shadow:0 1px 2px rgba(0,0,0,.12);white-space:nowrap}
+  .lvBtn:hover{filter:brightness(1.08)}
+  @media (max-width:560px){ header{align-items:flex-start} .hdrR{align-items:stretch;width:100%} .lvBtn{justify-content:center} .upd{text-align:left} }
 
   /* totals */
   .tiles{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
@@ -111,7 +116,10 @@
       <h1>ພະນັກງານມື້ນີ້ / Staff today</h1>
       <div class="date" id="date"></div>
     </div>
-    <div class="upd">ທຸກສາຂາ / All branches<br><span id="upd">ກຳລັງໂຫຼດ… / Loading…</span></div>
+    <div class="hdrR">
+      <a class="lvBtn" href="leave.html?k=YNK7T7nhQWBVVtJreTno" target="_blank" rel="noopener">📝 ຂໍລາພັກ / Request leave</a>
+      <div class="upd">ທຸກສາຂາ / All branches<br><span id="upd">ກຳລັງໂຫຼດ… / Loading…</span></div>
+    </div>
   </header>
   <div class="err" id="err"></div>
 
