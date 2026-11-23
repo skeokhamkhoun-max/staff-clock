@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Manager Links</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eef2f0; --card:#ffffff; --ink:#14302a; --muted:#5d6f6a; --line:#dde5e1; --soft:#f5f8f6;
+    --accent:#1f7a4d; --accent-ink:#ffffff; --focus:#f2b705;
+    --c-staff:#1f7a4d; --c-tablet:#2f5f96; --c-manager:#9a5b00; --c-owner:#7a3e9d; --c-admin:#4b5a56;
+    --shadow:0 1px 2px rgba(20,48,42,.06), 0 1px 1px rgba(20,48,42,.04);
+    --shadow-hover:0 8px 22px rgba(20,48,42,.10), 0 2px 4px rgba(20,48,42,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0f1715; --card:#17211e; --ink:#e6efeb; --muted:#9db0aa; --line:#26332f; --soft:#1c2824;
+      --accent:#3fa774; --c-staff:#4fbf86; --c-tablet:#6f9fd6; --c-manager:#d9a14a; --c-owner:#b98ad6; --c-admin:#9aaba6;
+      --shadow:0 1px 2px rgba(0,0,0,.3); --shadow-hover:0 8px 22px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0f1715; --card:#17211e; --ink:#e6efeb; --muted:#9db0aa; --line:#26332f; --soft:#1c2824;
+    --accent:#3fa774; --c-staff:#4fbf86; --c-tablet:#6f9fd6; --c-manager:#d9a14a; --c-owner:#b98ad6; --c-admin:#9aaba6;
+    --shadow:0 1px 2px rgba(0,0,0,.3); --shadow-hover:0 8px 22px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans Lao',system-ui,-apple-system,sans-serif}
+  .wrap{max-width:1120px;margin:0 auto;padding:28px 16px 56px}
+  header{margin-bottom:18px}
+  h1{margin:0;font-size:clamp(22px,3.2vw,30px);line-height:1.25}
+  .sub{color:var(--muted);font-size:15px;margin-top:4px}
+
+  /* search + filters */
+  .tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:18px 0 20px}
+  .search{flex:1 1 280px;position:relative}
+  .search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--muted)}
+  .search input{width:100%;font:inherit;font-size:16px;padding:12px 14px 12px 42px;border:1.5px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink)}
+  .search input:focus{outline:none;border-color:var(--accent)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:border-color .15s,background .15s}
+  .chip:hover{border-color:var(--muted)}
+  .chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .chip .n{opacity:.65;font-weight:500;margin-left:4px}
+  button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+
+  /* cards */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 18px 16px;display:flex;flex-direction:column;gap:10px;
+        box-shadow:var(--shadow);transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease;position:relative;overflow:hidden}
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c)}
+  .card:hover{transform:translateY(-2px);box-shadow:var(--shadow-hover);border-color:transparent}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .icon{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:20px;background:color-mix(in srgb,var(--c) 13%,transparent);flex:0 0 auto}
+  .badge{font-size:12px;font-weight:700;color:var(--c);background:color-mix(in srgb,var(--c) 12%,transparent);border-radius:999px;padding:3px 10px;white-space:nowrap}
+  .card h2{margin:2px 0 0;font-size:17px;line-height:1.35}
+  .card h2 small{display:block;font-size:13px;font-weight:500;color:var(--muted);margin-top:1px}
+  .desc{color:var(--muted);font-size:14px;line-height:1.5;margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .note{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+  .actions{margin-top:auto;display:flex;gap:8px;padding-top:4px}
+  .open{flex:1;display:inline-flex;justify-content:center;align-items:center;gap:6px;background:var(--accent);color:var(--accent-ink);text-decoration:none;
+        font-weight:700;font-size:15px;border-radius:10px;padding:11px 14px;white-space:nowrap;transition:filter .15s,transform .15s}
+  .open:hover{filter:brightness(1.08)}
+  .open:active{transform:scale(.98)}
+  .copy{white-space:nowrap;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:0 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:border-color .15s}
+  .copy:hover{border-color:var(--muted)}
+  .empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:40px 0;font-size:15px}
+  footer{color:var(--muted);font-size:12px;text-align:center;margin-top:26px}
+  @media (max-width:560px){ .wrap{padding:20px 16px 40px} .chips{overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px} .chip{white-space:nowrap} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>ລວມລິ້ງ ຜູ້ຈັດການ / Manager links</h1>
+    <div class="sub">ລິ້ງທັງໝົດຂອງລະບົບພະນັກງານ ໃນບ່ອນດຽວ / Every staff-system page in one place</div>
+  </header>
+
+  <div class="tools">
+    <label class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="ຊອກຫາ / Search pages…" autocomplete="off" aria-label="Search pages">
+    </label>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <footer>ກົດ "ເປີດ / Open" ເພື່ອໄປທີ່ໜ້ານັ້ນ · Tap “Open” to go to that page</footer>
+</div>
+
+<script>
+// ---- edit this list to add, remove or change pages ----
+const CATS = {
+  staff:   { lao: 'ພະນັກງານ', en: 'Staff',   color: 'var(--c-staff)' },
+  tablet:  { lao: 'ແທັບເລັດ', en: 'Tablet',  color: 'var(--c-tablet)' },
+  manager: { lao: 'ຜູ້ຈັດການ', en: 'Manager', color: 'var(--c-manager)' }
+};
+const APPS = 'https://script.google.com/macros/s/';
+const PAGES_URL = 'https://skeokhamkhoun-max.github.io/staff-clock/';   // same site as this page
+const TABLET = b => PAGES_URL + 'index.html?branch=' + encodeURIComponent(b) + '&key=IteQGZ1e0cMrI83V88Nt8sZZ';
+const PAGES = [
+  { cat:'staff', icon:'📊', lao:'ໜ້າພະນັກງານມື້ນີ້', en:'Attendance dashboard',
+    desc:'Who is at work, not in yet, on day off or on leave across all branches. View only, no sign-in.',
+    note:'Anyone with the link', url: PAGES_URL + 'dashboard.html?k=PPyqF92hjVDA4G0qYll7' },
+  { cat:'staff', icon:'📝', lao:'ຂໍລາພັກ', en:'Leave request',
+    desc:'Staff apply for leave from their phone and see who approved it and who is next.',
+    note:'Staff ID + PIN', url: PAGES_URL + 'leave.html?k=YNK7T7nhQWBVVtJreTno' },
+  { cat:'tablet', icon:'🌹', lao:'ແທັບເລັດ Rose In Love', en:'Clock-in tablet · Rose In Love',
+    desc:'Face-scan clock in and out for Rose In Love staff. Open once on the branch tablet.',
+    note:'Branch tablet only', url: TABLET('Rose In Love') },
+  { cat:'tablet', icon:'🏢', lao:'ແທັບເລັດ Lak6 & DJG1', en:'Clock-in tablet · Lak6 Office & DJG1',
+    desc:'Face-scan clock in and out for Lak6 Office & DJG1 staff.',
+    note:'Branch tablet only', url: TABLET('Lak6 Office & DJG1') },
+  { cat:'tablet', icon:'🍱', lao:'ແທັບເລັດ DJG2', en:'Clock-in tablet · DJG2',
+    desc:'Face-scan clock in and out for DJG2 staff.',
+    note:'Branch tablet only', url: TABLET('DJG2') },
+  { cat:'tablet', icon:'🎫', lao:'ແທັບເລັດ Champee', en:'Clock-in tablet · Champee',
+    desc:'Face-scan clock in and out for Champee staff.',
+    note:'Branch tablet only', url: TABLET('Champee') },
+  { cat:'manager', icon:'🔔', lao:'ແຈ້ງເຕືອນ ສຳລັບຜູ້ຈັດການ', en:'Manager reminders',
+    desc:'Late and no clock-out lists, leave waiting for approval, urgent leave and leave tracking.',
+    note:'Approver PIN', url: APPS + 'AKfycbyuBVRj_ENhG2c2FzBsVXIA-5mXvaPC0YUGOLjjmuhf1mp3R7XsX7rIrF5xCt4fMi2G/exec?page=team' },
+  { cat:'manager', icon:'⚙️', lao:'ຕັ້ງຄ່າ ພະນັກງານ', en:'Setup · staff, branches, teams',
+    desc:'Add or change staff, shifts, days off, branches and teams without opening the sheet.',
+    note:'Approver PIN with Setup access', url: APPS + 'AKfycbyuBVRj_ENhG2c2FzBsVXIA-5mXvaPC0YUGOLjjmuhf1mp3R7XsX7rIrF5xCt4fMi2G/exec?page=setupmgr' }
+];
+
+// ---- page logic ----
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let cat = 'all';
+try { cat = localStorage.getItem('hub_cat') || 'all'; } catch (e) {}
+if (cat !== 'all' && !CATS[cat]) cat = 'all';
+
+function renderChips(){
+  const list = [['all', 'ທັງໝົດ / All', PAGES.length]].concat(
+    Object.keys(CATS).map(k => [k, CATS[k].lao + ' / ' + CATS[k].en, PAGES.filter(p => p.cat === k).length]).filter(c => c[2] > 0));
+  $('chips').innerHTML = list.map(c => '<button class="chip' + (c[0] === cat ? ' on' : '') + '" data-k="' + c[0] + '">' + esc(c[1]) + '<span class="n">' + c[2] + '</span></button>').join('');
+  $('chips').querySelectorAll('.chip').forEach(b => b.onclick = () => {
+    cat = b.dataset.k; try { localStorage.setItem('hub_cat', cat); } catch (e) {}
+    renderChips(); renderCards();
+  });
+}
+function renderCards(){
+  const q = $('q').value.trim().toLowerCase();
+  const order = Object.keys(CATS);
+  const list = PAGES.slice().sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat)).filter(p => (cat === 'all' || p.cat === cat) &&
+    (!q || [p.lao, p.en, p.desc, p.note, CATS[p.cat].en, CATS[p.cat].lao].join(' ').toLowerCase().includes(q)));
+  if (!list.length) { $('grid').innerHTML = '<div class="empty">ບໍ່ພົບ / No pages match “' + esc(q) + '”</div>'; return; }
+  $('grid').innerHTML = list.map((p, i) => {
+    const c = CATS[p.cat];
+    return '<article class="card" style="--c:' + c.color + '">' +
+      '<div class="top"><div class="icon" aria-hidden="true">' + p.icon + '</div><span class="badge">' + esc(c.lao + ' / ' + c.en) + '</span></div>' +
+      '<h2>' + esc(p.lao) + '<small>' + esc(p.en) + '</small></h2>' +
+      '<p class="desc">' + esc(p.desc) + '</p>' +
+      '<div class="note">🔑 ' + esc(p.note) + '</div>' +
+      '<div class="actions"><a class="open" href="' + esc(p.url) + '" target="_blank" rel="noopener">ເປີດ / Open ↗</a>' +
+      '<button class="copy" data-u="' + esc(p.url) + '" aria-label="Copy link">ສຳເນົາ / Copy</button></div></article>';
+  }).join('');
+  $('grid').querySelectorAll('.copy').forEach(b => b.onclick = async () => {
+    try { await navigator.clipboard.writeText(b.dataset.u); b.textContent = '✓ ແລ້ວ / Copied'; }
+    catch (e) { b.textContent = 'ບໍ່ໄດ້ / Failed'; }
+    setTimeout(() => { b.textContent = 'ສຳເນົາ / Copy'; }, 1500);
+  });
+}
+$('q').addEventListener('input', renderCards);
+renderChips(); renderCards();
+</script>
+</body>
+</html>
